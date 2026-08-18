@@ -233,19 +233,21 @@
              Il n'écrit aucun formulaire : il présente l'éditeur de la condition ou de
              l'action, celui-là même que la version en liste utilisait. Le panneau recouvre
              le canevas au lieu de lui voler une colonne permanente. -->
-        <Border Classes="panel" Width="360" HorizontalAlignment="Right"
+        <Border Classes="panel" Width="400" HorizontalAlignment="Right"
                 IsVisible="{Binding Flow.IsInspectorOpen}">
           <Panel>
             <TextBlock Classes="empty" IsVisible="{Binding !Flow.HasSelection}"
                        Text="{DynamicResource Flow_Inspector_Empty}" />
 
-            <ScrollViewer IsVisible="{Binding Flow.HasSelection}" Padding="14"
-                          HorizontalScrollBarVisibility="Disabled">
-              <StackPanel Spacing="14">
+            <ScrollViewer IsVisible="{Binding Flow.HasSelection}" Padding="14,14,20,14"
+                          HorizontalScrollBarVisibility="Disabled"
+                          HorizontalContentAlignment="Stretch">
+              <StackPanel Spacing="14" HorizontalAlignment="Stretch">
 
                 <Grid ColumnDefinitions="*,Auto">
                   <StackPanel Grid.Column="0" Spacing="2">
-                    <TextBlock Classes="title" Text="{Binding Flow.SelectedNode.Title}" />
+                    <TextBlock Classes="title" TextWrapping="Wrap"
+                               Text="{Binding Flow.SelectedNode.Title}" />
                     <TextBlock Classes="muted" FontSize="11" IsVisible="{Binding Flow.ShowsEditor}"
                                Text="{Binding Flow.SelectedNode.Subtitle}" TextWrapping="Wrap" />
                   </StackPanel>
@@ -293,8 +295,10 @@
                           Content="{DynamicResource Rules_ChooseFolder}" />
 
                   <CheckBox FontSize="11" Margin="0,6,0,0"
-                            IsChecked="{Binding SelectedRule.StopProcessingOnMatch}"
-                            Content="{DynamicResource Rule_StopProcessing}" />
+                            HorizontalContentAlignment="Stretch"
+                            IsChecked="{Binding SelectedRule.StopProcessingOnMatch}">
+                    <TextBlock TextWrapping="Wrap" Text="{DynamicResource Rule_StopProcessing}" />
+                  </CheckBox>
                 </StackPanel>
 
                 <!-- ET / OU -->

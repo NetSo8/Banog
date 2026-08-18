@@ -209,7 +209,9 @@
           </Grid>
         </Button>
 
-        <CheckBox IsChecked="{Binding IncludeSubfolders}" Content="{DynamicResource Cond_Source_IncludeSub}" FontSize="11" />
+        <CheckBox IsChecked="{Binding IncludeSubfolders}" HorizontalContentAlignment="Stretch" FontSize="11">
+          <TextBlock TextWrapping="Wrap" Text="{DynamicResource Cond_Source_IncludeSub}" />
+        </CheckBox>
       </StackPanel>
     </DataTemplate>
 
@@ -232,7 +234,9 @@
 
         <ContentControl Content="{Binding Subfolder}" />
 
-        <CheckBox IsChecked="{Binding CreateDirectories}" Content="{DynamicResource Act_CreateDirs}" FontSize="11" />
+        <CheckBox IsChecked="{Binding CreateDirectories}" HorizontalContentAlignment="Stretch" FontSize="11">
+          <TextBlock TextWrapping="Wrap" Text="{DynamicResource Act_CreateDirs}" />
+        </CheckBox>
 
         <StackPanel Spacing="6">
           <TextBlock Classes="glue" Text="{DynamicResource Act_OnConflict}" FontSize="11" />
@@ -260,7 +264,9 @@
 
         <ContentControl Content="{Binding Subfolder}" />
 
-        <CheckBox IsChecked="{Binding CreateDirectories}" Content="{DynamicResource Act_CreateDirs}" FontSize="11" />
+        <CheckBox IsChecked="{Binding CreateDirectories}" HorizontalContentAlignment="Stretch" FontSize="11">
+          <TextBlock TextWrapping="Wrap" Text="{DynamicResource Act_CreateDirs}" />
+        </CheckBox>
 
         <StackPanel Spacing="6">
           <TextBlock Classes="glue" Text="{DynamicResource Act_OnConflict}" FontSize="11" />
@@ -317,7 +323,9 @@
         <TextBlock Classes="glue" Text="{DynamicResource Act_Run_With}" />
         <TextBox Text="{Binding Arguments}" Watermark="{DynamicResource Act_Run_Args}" />
 
-        <CheckBox IsChecked="{Binding WaitForExit}" Content="{DynamicResource Act_Run_Wait}" FontSize="11" />
+        <CheckBox IsChecked="{Binding WaitForExit}" HorizontalContentAlignment="Stretch" FontSize="11">
+          <TextBlock TextWrapping="Wrap" Text="{DynamicResource Act_Run_Wait}" />
+        </CheckBox>
       </StackPanel>
     </DataTemplate>
 
