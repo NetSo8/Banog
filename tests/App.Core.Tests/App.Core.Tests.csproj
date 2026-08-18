@@ -15,7 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\App.Core\App.Core.csproj" />
+    <ProjectReference Include="..\..\src\Banog.csproj" />
   </ItemGroup>
 
   <ItemGroup>

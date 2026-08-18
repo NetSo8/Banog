@@ -29,7 +29,7 @@ if not defined VSPATH (
 call "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat" >nul
 if errorlevel 1 exit /b 1
 
-dotnet publish "%~dp0src\App.Host\App.Host.csproj" -c Release -o "%~dp0publish" %*
+dotnet publish "%~dp0src\Banog.csproj" -c Release -o "%~dp0publish" %*
 if errorlevel 1 exit /b 1
 
 echo.

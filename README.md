@@ -23,25 +23,18 @@ installer, aucun compte, aucune télémétrie.
 
 ```
 src/
-  App.Core      moteur de règles, modèles sérialisables JSON, logique pure — aucune dépendance UI
-  App.Watcher   surveillance native (ReadDirectoryChangesW), debounce, stabilisation
-  App.UI        vues, viewmodels, styles Avalonia — ne référence ni App.Watcher ni Win32
-  App.Host      point d'entrée, composition, configuration AOT/publish
+  Banog.csproj  projet applicatif unique
+  App.Core/     moteur de règles, modèles sérialisables JSON, logique métier
+  App.Watcher/  surveillance native (ReadDirectoryChangesW), debounce, stabilisation
+  App.UI/       vues, viewmodels et styles Avalonia
+  App.Host/     point d'entrée, composition et services Windows
 tests/
   App.Core.Tests  82 tests (conditions, actions, tokens, sérialisation, sécurité)
 ```
 
-Le sens des dépendances est strict :
-
-```
-App.Host ──> App.UI ──> App.Core
-   │                       ▲
-   └────> App.Watcher ─────┘
-```
-
-`App.UI` ne connaît le moteur en marche qu'à travers `IAutomationController`, implémenté dans
-l'hôte. Le moteur ne connaît le disque qu'à travers `IFileSystem`, `IProcessRunner`,
-`ISystemClock`. Les tests s'exécutent entièrement en mémoire.
+Les sous-dossiers gardent des repères de maintenance et des namespaces clairs, mais ils sont
+tous compilés par le même projet `Banog.csproj`. Il n'y a qu'un exécutable applicatif à
+construire ; les tests restent séparés et s'exécutent entièrement en mémoire.
 
 ## Compiler et lancer
 
@@ -50,7 +43,7 @@ dotnet test
 ```
 
 ```bash
-dotnet run --project src/App.Host
+dotnet run --project src/Banog.csproj
 ```
 
 ## Publier l'exécutable natif
@@ -338,7 +331,7 @@ convertisseurs XAML exposés en statiques plutôt qu'instanciés par réflexion,
 La solution compile aujourd'hui sans un seul avertissement IL2xxx/IL3xxx.
 
 **Polymorphisme JSON par registre, pas par `[JsonDerivedType]`.** Les attributs auraient figé
-la liste des types dérivés dans `App.Core`. `RuleTypeRegistry` associe un discriminant à un
+la liste des types dérivés dans le coeur métier. `RuleTypeRegistry` associe un discriminant à un
 `JsonTypeInfo` : un module futur (conditions de contenu, OCR, classification IA) enregistre ses
 propres types avec son propre contexte généré, sans recompiler le coeur ni invalider les
 fichiers de règles existants. Un discriminant inconnu lève une erreur explicite plutôt que
