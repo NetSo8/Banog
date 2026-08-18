@@ -1,0 +1,3 @@
+# Une seule convention de fin de ligne pour éviter les fichiers mélangés entre Windows,
+# Visual Studio et GitHub.
+* text=auto eol=lf
