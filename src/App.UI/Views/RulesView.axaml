@@ -315,7 +315,8 @@
 
                 <!-- Condition ou action : l'éditeur existant, tel quel. -->
                 <StackPanel Spacing="12" IsVisible="{Binding Flow.ShowsEditor}">
-                  <ContentControl Content="{Binding Flow.SelectedNode.Editor}" />
+                  <ContentControl HorizontalContentAlignment="Stretch"
+                                   Content="{Binding Flow.SelectedNode.Editor}" />
 
                   <CheckBox FontSize="11" IsVisible="{Binding Flow.SelectedCondition,
                                                       Converter={x:Static svc:UiConverters.IsNotNull}}"

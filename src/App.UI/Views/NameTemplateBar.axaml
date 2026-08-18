@@ -30,7 +30,7 @@
 
   </UserControl.Styles>
 
-  <StackPanel Spacing="10">
+  <StackPanel Spacing="10" HorizontalAlignment="Stretch">
 
     <!-- L'aperçu d'abord : le résultat se lit avant même de toucher aux morceaux. -->
     <Border Classes="preview" IsVisible="{Binding HasPreview}">
@@ -56,10 +56,11 @@
         <Border Classes="panel" Padding="10,8">
           <Panel>
 
-            <ItemsControl x:Name="PartsList" ItemsSource="{Binding Parts}">
+            <ItemsControl x:Name="PartsList" ItemsSource="{Binding Parts}"
+                          HorizontalAlignment="Stretch">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                  <WrapPanel />
+                  <WrapPanel HorizontalAlignment="Stretch" />
                 </ItemsPanelTemplate>
               </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
@@ -123,10 +124,11 @@
         </StackPanel>
 
         <!-- Ce qu'on peut ajouter : les mêmes libellés que les morceaux. -->
-        <ItemsControl ItemsSource="{x:Static vm:NameTemplateBuilderViewModel.PartKinds}">
+        <ItemsControl ItemsSource="{x:Static vm:NameTemplateBuilderViewModel.PartKinds}"
+                      HorizontalAlignment="Stretch">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
-              <WrapPanel />
+              <WrapPanel HorizontalAlignment="Stretch" />
             </ItemsPanelTemplate>
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
