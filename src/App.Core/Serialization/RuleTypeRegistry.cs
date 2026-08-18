@@ -35,6 +35,7 @@ public static class RuleTypeRegistry
         RegisterAction(CopyAction.TypeId, d.CopyAction);
         RegisterAction(RenameAction.TypeId, d.RenameAction);
         RegisterAction(DeleteAction.TypeId, d.DeleteAction);
+        RegisterAction(RecycleAction.TypeId, d.RecycleAction);
         RegisterAction(RunCommandAction.TypeId, d.RunCommandAction);
     }
 

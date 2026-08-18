@@ -126,6 +126,7 @@ public static class Labels
             ActionKind.Copy => "Act_CopyKind",
             ActionKind.Rename => "Act_Rename",
             ActionKind.Delete => "Act_DeleteKind",
+            ActionKind.Recycle => "Act_RecycleKind",
             ActionKind.RunCommand => "Act_RunKind",
             _ => v.ToString(),
         },

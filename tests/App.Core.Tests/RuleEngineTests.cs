@@ -128,6 +128,19 @@ public class RuleEngineTests
     }
 
     [Fact]
+    public async Task Recycle_sends_the_file_to_the_recycle_bin()
+    {
+        _fs.AddFile(@"C:\Downloads\facture_client.pdf");
+
+        var report = await CreateEngine()
+            .ProcessAsync(TestData.File(), [PdfRule(new RecycleAction())]);
+
+        Assert.Contains(@"C:\Downloads\facture_client.pdf", _fs.RecycledPaths);
+        Assert.Empty(_fs.DeletedPaths);
+        Assert.Equal(ActionStatus.Applied, report.Rules[0].Actions[0].Status);
+    }
+
+    [Fact]
     public async Task Actions_after_a_delete_are_skipped()
     {
         _fs.AddFile(@"C:\Downloads\facture_client.pdf");

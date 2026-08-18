@@ -248,6 +248,19 @@ public sealed class DeleteActionHandler(IFileSystem fs) : ActionHandler<DeleteAc
     }
 }
 
+public sealed class RecycleActionHandler(IFileSystem fs) : ActionHandler<RecycleAction>
+{
+    protected override ValueTask<ActionOutcome> ExecuteCoreAsync(
+        RecycleAction action, ActionExecutionContext context, CancellationToken ct)
+    {
+        if (!context.FileAvailable) return ValueTask.FromResult(ActionOutcome.Skipped(Localization.CoreTexts.FileAlreadyConsumed));
+
+        fs.SendToRecycleBin(context.Current.FullPath);
+        context.MarkConsumed();
+        return ValueTask.FromResult(ActionOutcome.Applied(Localization.CoreTexts.Recycled));
+    }
+}
+
 public sealed class RunCommandActionHandler(IProcessRunner runner) : ActionHandler<RunCommandAction>
 {
     protected override async ValueTask<ActionOutcome> ExecuteCoreAsync(

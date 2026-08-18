@@ -138,6 +138,7 @@ public class SerializationTests
         Assert.Contains(CopyAction.TypeId, RuleTypeRegistry.KnownActionTags);
         Assert.Contains(RenameAction.TypeId, RuleTypeRegistry.KnownActionTags);
         Assert.Contains(DeleteAction.TypeId, RuleTypeRegistry.KnownActionTags);
+        Assert.Contains(RecycleAction.TypeId, RuleTypeRegistry.KnownActionTags);
         Assert.Contains(RunCommandAction.TypeId, RuleTypeRegistry.KnownActionTags);
     }
 

@@ -111,7 +111,7 @@ Toute condition accepte `"negate": true`.
 
 ### Actions v1
 
-`move` · `copy` · `rename` · `delete` (corbeille par défaut) · `runCommand`.
+`move` · `copy` · `rename` · `recycle` (corbeille) · `delete` · `runCommand`.
 
 ### Tokens
 

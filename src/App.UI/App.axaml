@@ -295,6 +295,10 @@
       </StackPanel>
     </DataTemplate>
 
+    <DataTemplate DataType="vm:RecycleActionViewModel">
+      <TextBlock Classes="muted" TextWrapping="Wrap" Text="{DynamicResource Act_Recycle_Note}" />
+    </DataTemplate>
+
     <DataTemplate DataType="vm:RunCommandActionViewModel">
       <StackPanel Spacing="8">
         <TextBlock Classes="glue" Text="{DynamicResource Act_Run}" />

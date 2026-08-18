@@ -75,6 +75,7 @@ public sealed class RuleEngine
                 new CopyActionHandler(fileSystem),
                 new RenameActionHandler(fileSystem),
                 new DeleteActionHandler(fileSystem),
+                new RecycleActionHandler(fileSystem),
                 new RunCommandActionHandler(processRunner),
             ],
             clock,

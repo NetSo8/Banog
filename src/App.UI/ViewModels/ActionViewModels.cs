@@ -22,6 +22,7 @@ public abstract class ActionViewModel : ObservableObject
         CopyAction a => new CopyActionViewModel(a),
         RenameAction a => new RenameActionViewModel(a),
         DeleteAction a => new DeleteActionViewModel(a),
+        RecycleAction a => new RecycleActionViewModel(a),
         RunCommandAction a => new RunCommandActionViewModel(a),
         _ => new UnsupportedActionViewModel(action),
     };
@@ -32,6 +33,7 @@ public abstract class ActionViewModel : ObservableObject
         ActionKind.Copy => new CopyActionViewModel(new CopyAction()),
         ActionKind.Rename => new RenameActionViewModel(new RenameAction()),
         ActionKind.Delete => new DeleteActionViewModel(new DeleteAction()),
+        ActionKind.Recycle => new RecycleActionViewModel(new RecycleAction()),
         ActionKind.RunCommand => new RunCommandActionViewModel(new RunCommandAction()),
         _ => new MoveActionViewModel(new MoveAction()),
     };
@@ -45,6 +47,7 @@ public enum ActionKind
     Copy,
     Rename,
     Delete,
+    Recycle,
     RunCommand,
 }
 
@@ -258,6 +261,16 @@ public partial class DeleteActionViewModel : ActionViewModel
     public DeleteActionViewModel(DeleteAction model) => UseRecycleBin = model.UseRecycleBin;
 
     public override RuleAction ToModel() => new DeleteAction { UseRecycleBin = UseRecycleBin };
+}
+
+public sealed class RecycleActionViewModel : ActionViewModel
+{
+    public override string DisplayName => Loc.T("Act_RecycleKind");
+    public override string Description => Loc.T("Desc_Recycle");
+
+    public RecycleActionViewModel(RecycleAction model) { }
+
+    public override RuleAction ToModel() => new RecycleAction();
 }
 
 public partial class RunCommandActionViewModel : ActionViewModel

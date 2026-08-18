@@ -30,6 +30,7 @@ namespace Banog.Core.Serialization;
 [JsonSerializable(typeof(CopyAction))]
 [JsonSerializable(typeof(RenameAction))]
 [JsonSerializable(typeof(DeleteAction))]
+[JsonSerializable(typeof(RecycleAction))]
 [JsonSerializable(typeof(RunCommandAction))]
 public sealed partial class RulesJsonContext : JsonSerializerContext
 {

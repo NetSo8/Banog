@@ -678,6 +678,10 @@ public partial class MainWindowViewModel : ObservableObject
                     steps.Add(Loc.T(delete.UseRecycleBin ? "Test_Recycled" : "Test_Deleted"));
                     break;
 
+                case RecycleActionViewModel:
+                    steps.Add(Loc.T("Test_Recycled"));
+                    break;
+
                 case RunCommandActionViewModel command:
                     steps.Add(Loc.F("Test_Command", Path.GetFileName(command.Executable)));
                     break;

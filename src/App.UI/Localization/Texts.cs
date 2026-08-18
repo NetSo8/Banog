@@ -227,6 +227,8 @@ internal static class Texts
         ("Act_Delete_Warning",
             "Sans la corbeille, le fichier est effacé sans retour possible. Essayez la règle avant de l'activer.",
             "Without the recycle bin, the file is erased with no way back. Try the rule before turning it on."),
+        ("Act_Recycle_Note", "Le fichier sera envoyé à la corbeille Windows et restera récupérable.",
+            "The file will be sent to the Windows recycle bin and can be recovered."),
         ("Act_Run", "Lancer", "Run"),
         ("Act_Run_With", "avec", "with"),
         ("Act_Run_Args", "arguments (facultatif)", "arguments (optional)"),
@@ -235,6 +237,7 @@ internal static class Texts
         ("Act_MoveKind", "Déplacer", "Move"),
         ("Act_CopyKind", "Copier", "Copy"),
         ("Act_DeleteKind", "Supprimer", "Delete"),
+        ("Act_RecycleKind", "Mettre à la corbeille", "Send to the recycle bin"),
         ("Act_RunKind", "Exécuter une commande", "Run a command"),
 
         ("Act_Unsupported",

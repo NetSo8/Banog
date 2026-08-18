@@ -383,6 +383,7 @@ public partial class RuleFlowViewModel : ObservableObject
         CopyActionViewModel => "⧉",
         RenameActionViewModel => "✎",
         DeleteActionViewModel => "⌫",
+        RecycleActionViewModel => "♻",
         RunCommandActionViewModel => "▶",
         _ => "•",
     };

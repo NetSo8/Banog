@@ -66,6 +66,13 @@ public sealed class DeleteAction : RuleAction
     public bool UseRecycleBin { get; set; } = true;
 }
 
+/// <summary>Envoie le fichier à la corbeille Windows, sans suppression définitive.</summary>
+public sealed class RecycleAction : RuleAction
+{
+    public const string TypeId = "recycle";
+    public override string Type => TypeId;
+}
+
 public sealed class RunCommandAction : RuleAction
 {
     public const string TypeId = "runCommand";
