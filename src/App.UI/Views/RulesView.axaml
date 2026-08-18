@@ -101,9 +101,11 @@
                  FontWeight="SemiBold" Watermark="{DynamicResource Rule_NameWatermark}" />
       </Grid>
 
-      <Grid Grid.Row="1" ColumnDefinitions="*,14,340">
+      <!-- Le canevas prend toute la place. L'inspecteur se superpose à droite uniquement
+           après un clic sur un nœud, ce qui évite de rétrécir le flowchart. -->
+      <Grid Grid.Row="1">
 
-        <Border Grid.Column="0" Classes="panel">
+        <Border Classes="panel">
           <Grid RowDefinitions="*,Auto">
 
             <views:FlowSurface Grid.Row="0" Background="{DynamicResource Surface}"
@@ -229,8 +231,10 @@
 
         <!-- ========== Inspecteur de l'étape choisie ==========
              Il n'écrit aucun formulaire : il présente l'éditeur de la condition ou de
-             l'action, celui-là même que la version en liste utilisait. -->
-        <Border Grid.Column="2" Classes="panel">
+             l'action, celui-là même que la version en liste utilisait. Le panneau recouvre
+             le canevas au lieu de lui voler une colonne permanente. -->
+        <Border Classes="panel" Width="360" HorizontalAlignment="Right"
+                IsVisible="{Binding Flow.IsInspectorOpen}">
           <Panel>
             <TextBlock Classes="empty" IsVisible="{Binding !Flow.HasSelection}"
                        Text="{DynamicResource Flow_Inspector_Empty}" />
@@ -239,11 +243,16 @@
                           HorizontalScrollBarVisibility="Disabled">
               <StackPanel Spacing="14">
 
-                <StackPanel Spacing="2">
-                  <TextBlock Classes="title" Text="{Binding Flow.SelectedNode.Title}" />
-                  <TextBlock Classes="muted" FontSize="11" IsVisible="{Binding Flow.ShowsEditor}"
-                             Text="{Binding Flow.SelectedNode.Subtitle}" TextWrapping="Wrap" />
-                </StackPanel>
+                <Grid ColumnDefinitions="*,Auto">
+                  <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock Classes="title" Text="{Binding Flow.SelectedNode.Title}" />
+                    <TextBlock Classes="muted" FontSize="11" IsVisible="{Binding Flow.ShowsEditor}"
+                               Text="{Binding Flow.SelectedNode.Subtitle}" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <Button Grid.Column="1" Classes="tiny" Content="✕"
+                          ToolTip.Tip="{DynamicResource Types_Close}"
+                          Command="{Binding Flow.CloseInspectorCommand}" />
+                </Grid>
 
                 <!-- Déclencheur : les dossiers surveillés, et ce qui vaut pour la règle. -->
                 <StackPanel Spacing="10" IsVisible="{Binding Flow.ShowsTrigger}">

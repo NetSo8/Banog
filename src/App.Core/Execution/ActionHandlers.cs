@@ -21,12 +21,17 @@ internal static class DestinationResolver
         FileContext file,
         DateTimeOffset now,
         ConflictPolicy policy,
-        out bool overwrite)
+        out bool overwrite,
+        bool preserveSourceExtension = false)
     {
         overwrite = false;
         var useCounterToken = TokenExpander.ContainsCounter(fileNameTemplate);
 
-        var firstName = TokenExpander.ExpandFileName(fileNameTemplate, file, now, counter: 1);
+        string ExpandName(int counter) => preserveSourceExtension
+            ? TokenExpander.ExpandFileNameWithOriginalExtension(fileNameTemplate, file, now, counter)
+            : TokenExpander.ExpandFileName(fileNameTemplate, file, now, counter);
+
+        var firstName = ExpandName(counter: 1);
         var firstPath = Path.Join(directory, firstName);
 
         if (!fs.FileExists(firstPath)) return firstPath;
@@ -57,7 +62,7 @@ internal static class DestinationResolver
 
                     if (useCounterToken)
                     {
-                        candidate = Path.Join(directory, TokenExpander.ExpandFileName(fileNameTemplate, file, now, n));
+                        candidate = Path.Join(directory, ExpandName(n));
                     }
                     else
                     {
@@ -204,7 +209,8 @@ public sealed class RenameActionHandler(IFileSystem fs) : ActionHandler<RenameAc
         var directory = file.DirectoryPath.ToString();
 
         var target = DestinationResolver.Resolve(
-            fs, directory, action.Template, file, now, action.OnConflict, out var overwrite);
+            fs, directory, action.Template, file, now, action.OnConflict, out var overwrite,
+            preserveSourceExtension: true);
 
         if (target is null)
             return ValueTask.FromResult(ActionOutcome.Skipped(Localization.CoreTexts.NameTaken));

@@ -86,6 +86,22 @@ public static class TokenExpander
         return PathUtilities.SanitizeFileName(expanded);
     }
 
+    /// <summary>
+    /// Développe un nom en conservant obligatoirement l'extension du fichier source. Le
+    /// gabarit peut donc changer le nom, mais jamais transformer un PDF en TXT par erreur.
+    /// </summary>
+    public static string ExpandFileNameWithOriginalExtension(
+        string template, FileContext file, DateTimeOffset now, int counter = 1)
+    {
+        var expanded = ExpandFileName(template, file, now, counter);
+        var dot = expanded.LastIndexOf('.');
+        var baseName = dot > 0 ? expanded[..dot] : expanded;
+
+        return file.Extension.IsEmpty
+            ? baseName
+            : string.Concat(baseName, ".", file.Extension.ToString());
+    }
+
     internal static void Expand(
         ref ValueStringBuilder builder,
         string template,

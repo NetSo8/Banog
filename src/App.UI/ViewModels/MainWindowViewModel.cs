@@ -302,7 +302,11 @@ public partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Referme le flux et revient à la liste des règles.</summary>
     [RelayCommand]
-    private void CloseRule() => IsFlowOpen = false;
+    private void CloseRule()
+    {
+        Flow.IsInspectorOpen = false;
+        IsFlowOpen = false;
+    }
 
     [RelayCommand]
     private void ClearActivity()

@@ -58,6 +58,7 @@ public partial class RuleFlowViewModel : ObservableObject
     // ---- Sélection -----------------------------------------------------------------------
 
     [ObservableProperty] public partial FlowNodeViewModel? SelectedNode { get; set; }
+    [ObservableProperty] public partial bool IsInspectorOpen { get; set; }
 
     public static ConditionKind[] ConditionKinds => RuleViewModel.ConditionKinds;
     public static ActionKind[] ActionKinds => RuleViewModel.ActionKinds;
@@ -121,6 +122,7 @@ public partial class RuleFlowViewModel : ObservableObject
         // vide s'ouvre sur « ajouter une condition » — c'est la première chose à faire.
         _selectedEditor = null;
         _selectedKind = rule is { Conditions.Count: 0 } ? FlowNodeKind.AddCondition : FlowNodeKind.Trigger;
+        IsInspectorOpen = false;
         ResetView();
 
         Build();
@@ -390,8 +392,14 @@ public partial class RuleFlowViewModel : ObservableObject
     [RelayCommand]
     private void Select(FlowNodeViewModel? node)
     {
-        if (node is not null) SelectedNode = node;
+        if (node is null) return;
+
+        SelectedNode = node;
+        IsInspectorOpen = true;
     }
+
+    [RelayCommand]
+    private void CloseInspector() => IsInspectorOpen = false;
 
     [RelayCommand]
     private void AddCondition(ConditionKind kind)

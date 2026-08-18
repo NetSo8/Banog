@@ -78,6 +78,19 @@ public class RuleEngineTests
     }
 
     [Fact]
+    public async Task Rename_keeps_the_original_extension()
+    {
+        _fs.AddFile(@"C:\Downloads\facture_client.pdf");
+
+        var rule = PdfRule(new RenameAction { Template = "{name}_archive.txt" });
+        var report = await CreateEngine().ProcessAsync(TestData.File(), [rule]);
+
+        Assert.Equal(@"C:\Downloads\facture_client_archive.pdf", report.FinalPath);
+        Assert.True(_fs.FileExists(@"C:\Downloads\facture_client_archive.pdf"));
+        Assert.False(_fs.FileExists(@"C:\Downloads\facture_client_archive.txt"));
+    }
+
+    [Fact]
     public async Task Copy_leaves_the_original_in_place()
     {
         _fs.AddFile(@"C:\Downloads\facture_client.pdf");

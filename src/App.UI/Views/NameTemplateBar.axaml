@@ -111,21 +111,15 @@
           </Panel>
         </Border>
 
-        <!-- L'extension : toujours la dernière, après le point. Rien ne peut la suivre. -->
+        <!-- L'extension vient toujours du fichier source : elle est visible mais non éditable. -->
         <StackPanel IsVisible="{Binding IsFileName}" Spacing="4">
-          <StackPanel Orientation="Horizontal" Spacing="6">
-            <TextBlock Text="." FontSize="15" FontWeight="Bold" VerticalAlignment="Center" />
-            <Border Classes="piece" IsVisible="{Binding HasExtension}" ToolTip.Tip="{DynamicResource Tpl_Ext_Tip}">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <TextBox Text="{Binding ExtensionText}" MinWidth="70" MaxWidth="160"
-                         FontSize="11" Padding="6,2" Watermark="{DynamicResource Tpl_Ext_Watermark}" />
-                <Button Classes="tiny" Content="✕" ToolTip.Tip="{DynamicResource Tpl_Ext_Remove_Tip}"
-                        Command="{Binding RemoveExtensionCommand}" />
-              </StackPanel>
-            </Border>
-            <Button Classes="pill" IsVisible="{Binding !HasExtension}" Command="{Binding AddExtensionCommand}"
-                    Content="{DynamicResource Tpl_AddExtension}" />
-          </StackPanel>
+          <Border Classes="piece" ToolTip.Tip="{DynamicResource Tpl_Ext_Original_Tip}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="." FontSize="15" FontWeight="Bold" VerticalAlignment="Center" />
+              <TextBlock Text="{DynamicResource Tpl_Ext_Original}" FontSize="11"
+                         VerticalAlignment="Center" />
+            </StackPanel>
+          </Border>
         </StackPanel>
 
         <!-- Ce qu'on peut ajouter : les mêmes libellés que les morceaux. -->
@@ -145,11 +139,6 @@
           </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <StackPanel Spacing="6" IsVisible="{Binding WarnsMissingExtension}">
-          <TextBlock Classes="warning" FontSize="11" TextWrapping="Wrap"
-                     Text="{DynamicResource Tpl_Warn_NoExtension}" />
-        </StackPanel>
-
         <Button Classes="ghost" FontSize="11" HorizontalAlignment="Left"
                 Command="{Binding ToggleAdvancedCommand}"
                 Content="{DynamicResource Tpl_Advanced_On}" />
@@ -162,10 +151,6 @@
                  Watermark="{}{date}_{nom}.{extension}" />
         <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
                    Text="{DynamicResource Tpl_Advanced_Hint}" />
-        <StackPanel Spacing="6" IsVisible="{Binding WarnsMissingExtension}">
-          <TextBlock Classes="warning" FontSize="11" TextWrapping="Wrap"
-                     Text="{DynamicResource Tpl_Warn_NoExtension}" />
-        </StackPanel>
         <Button Classes="ghost" FontSize="11" HorizontalAlignment="Left"
                 Command="{Binding ToggleAdvancedCommand}"
                 Content="{DynamicResource Tpl_Advanced_Off}" />

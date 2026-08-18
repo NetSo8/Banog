@@ -152,10 +152,10 @@ public enum TemplateTarget
 /// Composition d'un nom de fichier (ou d'un sous-dossier) morceau par morceau.
 ///
 /// Le moteur lit toujours un gabarit à accolades — « {date}_{nom}.{extension} » — mais
-/// personne n'a à l'écrire : on empile des pastilles « Date », « Nom », « Extension »,
-/// on les réordonne, et l'aperçu montre le résultat sur un fichier d'exemple. Le gabarit
-/// reste la source de vérité : il est relu au chargement, et le mode avancé permet
-/// toujours de le corriger à la main.
+/// personne n'a à l'écrire : on empile des pastilles « Date » et « Nom », on les réordonne,
+/// puis l'extension du fichier source est ajoutée automatiquement. Le gabarit reste la
+/// source de vérité : il est relu au chargement, et le mode avancé reste disponible pour
+/// les formats que les pastilles ne savent pas représenter.
 /// </summary>
 public partial class NameTemplateBuilderViewModel : ObservableObject
 {
@@ -170,8 +170,8 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
         new("000", null, "001, 002, 003…"),
     ];
 
-    /// <summary>Morceaux proposés à l'ajout, du plus courant au plus rare. L'extension n'y
-    /// figure pas : elle a son emplacement à elle, à la fin du nom.</summary>
+    /// <summary>Morceaux proposés à l'ajout, du plus courant au plus rare. L'extension est
+    /// toujours reprise du fichier source et ne constitue donc pas un morceau éditable.</summary>
     public static TemplatePartKind[] PartKinds { get; } =
     [
         TemplatePartKind.Literal,
@@ -181,7 +181,6 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
         TemplatePartKind.Modified,
         TemplatePartKind.Today,
         TemplatePartKind.Folder,
-        TemplatePartKind.FullName,
     ];
 
     private readonly TemplateTarget _target;
@@ -204,15 +203,6 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
     /// la plupart des règles rangent tout dans le même dossier.
     /// </summary>
     [ObservableProperty] public partial bool IsPaletteOpen { get; set; }
-
-    /// <summary>
-    /// L'extension du nom, à part des morceaux : rien ne peut être posé après elle.
-    /// Vide, elle garde l'extension d'origine ; remplie, elle la remplace.
-    /// </summary>
-    [ObservableProperty] public partial string ExtensionText { get; set; } = string.Empty;
-
-    /// <summary>Vrai tant que le nom porte une extension. La retirer est possible, mais signalé.</summary>
-    [ObservableProperty] public partial bool HasExtension { get; set; }
 
     public NameTemplateBuilderViewModel(TemplateTarget target, string template)
     {
@@ -267,7 +257,7 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
             {
                 return string.IsNullOrEmpty(Template)
                     ? string.Empty
-                    : TokenExpander.ExpandFileName(Template, sample, now, counter: 2);
+                    : TokenExpander.ExpandFileNameWithOriginalExtension(Template, sample, now, counter: 2);
             }
 
             var folder = string.IsNullOrEmpty(Template)
@@ -294,49 +284,64 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
 
     public static string PreviewSample => Localization.Loc.F("Tpl_Preview_Sample", SampleName);
 
-    /// <summary>
-    /// Le seul piège du renommage : un nom sans extension. Windows ne saurait plus ouvrir
-    /// le fichier, et rien ne le dirait avant que ce soit fait.
-    /// </summary>
-    public bool WarnsMissingExtension
-    {
-        get
-        {
-            if (_target != TemplateTarget.FileName || Template.Length == 0) return false;
-            if (HasExtension) return false;
-
-            if (!IsAdvanced)
-            {
-                // En morceaux, le nom complet porte son extension : tout le reste en a besoin.
-                return !Parts.Any(p => p.Kind == TemplatePartKind.FullName);
-            }
-
-            // Mode avancé : on regarde le gabarit brut, sans le réécrire.
-            if (ContainsExtensionToken(Template)) return false;
-
-            var dot = Template.LastIndexOf('.');
-            return dot < 0 || dot >= Template.Length - 1 || !char.IsLetterOrDigit(Template[dot + 1]);
-        }
-    }
-
-    private static bool ContainsExtensionToken(string template)
-    {
-        var lower = template.ToLowerInvariant();
-
-        return lower.Contains("{ext", StringComparison.Ordinal)
-            || lower.Contains("{fichier", StringComparison.Ordinal)
-            || lower.Contains("{filename", StringComparison.Ordinal);
-    }
-
     private void OnPartChanged(object? sender, PropertyChangedEventArgs e) => Compose();
 
     partial void OnTemplateChanged(string value)
     {
+        if (!_composing && !_parsing && _target == TemplateTarget.FileName)
+        {
+            var normalized = KeepOriginalExtension(value);
+            if (!string.Equals(normalized, value, StringComparison.Ordinal))
+            {
+                _composing = true;
+                try { Template = normalized; }
+                finally { _composing = false; }
+                value = normalized;
+            }
+        }
+
         if (!_composing) Parse(value);
 
         OnPropertyChanged(nameof(Preview));
         OnPropertyChanged(nameof(HasPreview));
-        OnPropertyChanged(nameof(WarnsMissingExtension));
+    }
+
+    /// <summary>
+    /// Dans le mode avancé, remplace une extension littérale dès qu'elle est complète. Un
+    /// utilisateur peut encore écrire le nom librement, mais « .txt » devient toujours
+    /// « .{extension} » avant d'être enregistré.
+    /// </summary>
+    private static string KeepOriginalExtension(string template)
+    {
+        if (template.EndsWith(".{extension}", StringComparison.OrdinalIgnoreCase)
+            || template.EndsWith(".{ext}", StringComparison.OrdinalIgnoreCase)
+            || template.EndsWith("{filename}", StringComparison.OrdinalIgnoreCase)
+            || template.EndsWith("{fichier}", StringComparison.OrdinalIgnoreCase)) return template;
+
+        var depth = 0;
+        var dot = -1;
+
+        for (var i = 0; i < template.Length; i++)
+        {
+            switch (template[i])
+            {
+                case '{' when i + 1 < template.Length && template[i + 1] == '{':
+                    i++;
+                    break;
+                case '{':
+                    depth++;
+                    break;
+                case '}':
+                    depth = Math.Max(0, depth - 1);
+                    break;
+                case '.' when depth == 0:
+                    dot = i;
+                    break;
+            }
+        }
+
+        if (dot < 0 || dot == template.Length - 1) return template;
+        return string.Concat(template[..dot], ".{extension}");
     }
 
     partial void OnPreviewPrefixChanged(string value)
@@ -355,26 +360,6 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
     partial void OnIsAdvancedChanged(bool value)
     {
         OnPropertyChanged(nameof(HasPreview));
-        OnPropertyChanged(nameof(WarnsMissingExtension));
-    }
-
-    partial void OnHasExtensionChanged(bool value)
-    {
-        Compose();
-        OnPropertyChanged(nameof(WarnsMissingExtension));
-    }
-
-    partial void OnExtensionTextChanged(string value)
-    {
-        // Le point est déjà posé par le composeur : le taper en plus produirait « ..pdf ».
-        var sanitized = value.Replace(".", string.Empty);
-        if (!string.Equals(sanitized, value, StringComparison.Ordinal))
-        {
-            ExtensionText = sanitized;
-            return;
-        }
-
-        Compose();
     }
 
     [RelayCommand]
@@ -415,14 +400,6 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
         while (Parts.Count > 0) Parts.RemoveAt(Parts.Count - 1);
     }
 
-    /// <summary>Réparation en un clic de l'oubli le plus coûteux.</summary>
-    [RelayCommand]
-    private void AddExtension() => HasExtension = true;
-
-    /// <summary>Retirer l'extension est permis, mais l'avertissement reste : c'est le cas sans retour.</summary>
-    [RelayCommand]
-    private void RemoveExtension() => HasExtension = false;
-
     [RelayCommand]
     private void ToggleAdvanced()
     {
@@ -442,14 +419,12 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
         var builder = new StringBuilder();
         foreach (var part in Parts) builder.Append(part.ToTemplate());
 
-        // Le nom de fichier finit toujours par le point et l'extension : c'est la
-        // structure même du composeur, rien ne peut être ajouté après.
-        if (_target == TemplateTarget.FileName && HasExtension)
+        // Le nom de fichier finit toujours par l'extension du fichier source : rien ne
+        // permet de la retirer ou de la remplacer dans le composeur.
+        if (_target == TemplateTarget.FileName)
         {
             builder.Append('.');
-            builder.Append(string.IsNullOrEmpty(ExtensionText)
-                ? "{extension}"
-                : TemplatePartViewModel.Escape(ExtensionText));
+            builder.Append("{extension}");
         }
 
         _composing = true;
@@ -465,7 +440,6 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
         OnPropertyChanged(nameof(HasParts));
         OnPropertyChanged(nameof(Preview));
         OnPropertyChanged(nameof(HasPreview));
-        OnPropertyChanged(nameof(WarnsMissingExtension));
     }
 
     /// <summary>
@@ -475,7 +449,7 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
     /// </summary>
     private void Parse(string template)
     {
-        var parsed = TryParse(template, out var parts, out var extension, out var hasExtension);
+        var parsed = TryParse(template, out var parts);
 
         _parsing = true;
         try
@@ -486,11 +460,6 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
             {
                 foreach (var part in parts) Parts.Add(part);
 
-                if (_target == TemplateTarget.FileName)
-                {
-                    HasExtension = hasExtension;
-                    ExtensionText = extension;
-                }
             }
         }
         finally
@@ -501,15 +470,12 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
         IsAdvanced = !parsed;
 
         OnPropertyChanged(nameof(HasParts));
-        OnPropertyChanged(nameof(WarnsMissingExtension));
     }
 
-    private bool TryParse(string template, out List<TemplatePartViewModel> parts, out string extension, out bool hasExtension)
+    private bool TryParse(string template, out List<TemplatePartViewModel> parts)
     {
         var result = new List<TemplatePartViewModel>();
         parts = result;
-        extension = string.Empty;
-        hasExtension = false;
 
         if (string.IsNullOrEmpty(template)) return true;
 
@@ -566,7 +532,7 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
 
         FlushLiteral();
 
-        return _target != TemplateTarget.FileName || NormalizeFileName(result, out extension, out hasExtension);
+        return _target != TemplateTarget.FileName || NormalizeFileName(result);
     }
 
     /// <summary>
@@ -574,25 +540,20 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
     /// point dans les morceaux eux-mêmes, ou toute extension pas en dernière position,
     /// n'est pas représentable : le mode avancé prend le relais sans rien réécrire.
     /// </summary>
-    private static bool NormalizeFileName(List<TemplatePartViewModel> parts, out string extension, out bool hasExtension)
+    private static bool NormalizeFileName(List<TemplatePartViewModel> parts)
     {
-        extension = string.Empty;
-        hasExtension = false;
-
         var last = parts.Count - 1;
         if (last < 0) return true;
 
         if (parts[last].Kind == TemplatePartKind.Extension)
         {
             // « {extension} » doit suivre le point, rien d'autre : « {nom}.{extension} »
-            // est la forme canonique. Seul, ou sans point, le gabarit n'est pas
-            // représentable — la case extension ajoute le point d'office.
+            // est la forme canonique. Seul, ou sans point, le gabarit passe en mode avancé.
             if (last == 0 || parts[last - 1] is not { IsLiteral: true, Text: "." }) return false;
 
             parts.RemoveAt(last);
             parts.RemoveAt(last - 1);
-            hasExtension = true;
-            last -= 2;
+            last = parts.Count - 1;
         }
         else if (parts[last] is { IsLiteral: true, Text: { } text })
         {
@@ -605,9 +566,6 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
                 // (« .old.txt ») ne se représente pas.
                 var prefix = text[..dot];
                 if (prefix.Contains('.') || dot >= text.Length - 1) return false;
-
-                extension = text[(dot + 1)..];
-                hasExtension = true;
 
                 if (prefix.Length > 0)
                 {
@@ -627,6 +585,13 @@ public partial class NameTemplateBuilderViewModel : ObservableObject
         {
             if (parts[i].Kind == TemplatePartKind.Extension) return false;
             if (parts[i] is { IsLiteral: true, Text: { } t } && t.Contains('.')) return false;
+
+            // {filename} contenait déjà l'extension ; le remplace par {name} puisque le
+            // composeur ajoute maintenant l'extension source, une seule fois, à la fin.
+            if (parts[i].Kind == TemplatePartKind.FullName)
+            {
+                parts[i] = new TemplatePartViewModel(TemplatePartKind.Name);
+            }
         }
 
         return true;
