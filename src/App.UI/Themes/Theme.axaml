@@ -1,0 +1,412 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Banog.UI.Localization">
+
+  <!-- Tous les sélecteurs d'énumération affichent un libellé lisible plutôt que le nom
+       de la valeur. Défini une fois ici, appliqué par la classe « enum ». -->
+  <Style Selector="ComboBox.enum">
+    <Setter Property="ItemTemplate">
+      <DataTemplate>
+        <TextBlock Text="{Binding Converter={x:Static loc:Labels.Display}}" />
+      </DataTemplate>
+    </Setter>
+  </Style>
+
+
+  <!-- Styles neutres vis-à-vis du thème : toutes les couleurs passent par DynamicResource,
+       résolu contre la ThemeDictionary active (voir Themes/Palette.axaml). -->
+
+  <Style Selector="Window">
+    <Setter Property="Background" Value="{DynamicResource Surface}" />
+    <Setter Property="FontFamily" Value="Inter, $Default" />
+  </Style>
+
+  <Style Selector="TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Text}" />
+  </Style>
+
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
+  <Style Selector="TextBlock.error">
+    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+  </Style>
+
+  <Style Selector="TextBlock.section">
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="0,0,0,6" />
+  </Style>
+
+  <Style Selector="TextBlock.title">
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <!-- Titre d'un espace : ce qu'on regarde en ce moment. -->
+  <Style Selector="TextBlock.h1">
+    <Setter Property="FontSize" Value="20" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <!-- ==== Barre latérale ============================================================ -->
+
+  <Style Selector="Border.sidebar">
+    <Setter Property="Background" Value="{DynamicResource Sidebar}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Stroke}" />
+    <Setter Property="BorderThickness" Value="0,0,1,0" />
+  </Style>
+
+  <!-- Un onglet de navigation : pleine largeur, aligné à gauche, sans bordure.
+       L'espace courant est marqué par un fond, pas seulement par une couleur de texte. -->
+  <Style Selector="Button.nav">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Padding" Value="10,8" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+
+  <Style Selector="Button.nav:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SurfaceHigh}" />
+  </Style>
+
+  <Style Selector="Button.nav.active">
+    <Setter Property="Background" Value="{DynamicResource SidebarActive}" />
+    <Setter Property="Foreground" Value="{DynamicResource Text}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="Button.nav.active /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SidebarActive}" />
+  </Style>
+
+  <!-- ==== Tableau de bord ============================================================ -->
+
+  <!-- Tuile de chiffre : un nombre, son libellé, rien d'autre. -->
+  <Style Selector="Border.tile">
+    <Setter Property="Background" Value="{DynamicResource SurfaceRaised}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Stroke}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="14,12" />
+  </Style>
+
+  <Style Selector="TextBlock.metric">
+    <Setter Property="FontSize" Value="26" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="TextBlock.metric.good">
+    <Setter Property="Foreground" Value="{DynamicResource Success}" />
+  </Style>
+
+  <Style Selector="TextBlock.metric.bad">
+    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+  </Style>
+
+  <Style Selector="TextBlock.metricLabel">
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Margin" Value="0,2,0,0" />
+  </Style>
+
+  <!-- Témoin de modifications non enregistrées. -->
+  <Style Selector="Border.badge">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Warning}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="8,3" />
+  </Style>
+
+  <Style Selector="TextBlock.warning">
+    <Setter Property="Foreground" Value="{DynamicResource Warning}" />
+  </Style>
+
+  <Style Selector="TextBlock.mono">
+    <Setter Property="FontFamily" Value="Consolas,monospace" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+  </Style>
+
+  <Style Selector="Border.panel">
+    <Setter Property="Background" Value="{DynamicResource SurfaceRaised}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Stroke}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{DynamicResource SurfaceHigh}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Stroke}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="10" />
+    <Setter Property="Margin" Value="0,0,0,6" />
+  </Style>
+
+  <!-- Carte d'action irréversible : le rouge n'est pas décoratif, il signale qu'aucun
+       retour arrière n'est possible. -->
+  <Style Selector="Border.danger">
+    <Setter Property="BorderBrush" Value="{DynamicResource Danger}" />
+  </Style>
+
+  <!-- Zone d'accueil quand une liste est vide : elle indique l'action suivante. -->
+  <Style Selector="TextBlock.empty">
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="TextAlignment" Value="Center" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="20" />
+  </Style>
+
+  <!-- Mot de liaison d'une phrase de règle : présent, mais en retrait. -->
+  <Style Selector="TextBlock.glue">
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Border.chip">
+    <Setter Property="Background" Value="{DynamicResource SurfaceHigh}" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="8,2" />
+  </Style>
+
+  <!-- ==== Choix guidés : pastilles, sélecteur de types, gabarits ==================== -->
+
+  <!-- Une pastille est un choix déjà fait : elle se lit d'un coup d'œil et se retire d'un
+       clic. C'est ce qui remplace les listes tapées à la main (« pdf, png ») et les
+       gabarits à accolades. -->
+  <Style Selector="Border.pastille">
+    <Setter Property="Background" Value="{DynamicResource SurfaceRaised}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Stroke}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="8,3" />
+    <Setter Property="Margin" Value="0,0,6,6" />
+  </Style>
+
+  <!-- Un morceau de gabarit remplacé à l'exécution, distingué du texte tapé tel quel. -->
+  <Style Selector="Border.pastille.token">
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+  </Style>
+
+  <!-- Bouton d'ajout : rond, discret, à côté de ce qu'il complète. -->
+  <Style Selector="Button.pill">
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Padding" Value="10,3" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Margin" Value="0,0,6,6" />
+  </Style>
+
+  <!-- Bouton de manipulation d'une pastille (déplacer, retirer) : présent, jamais lourd. -->
+  <Style Selector="Button.tiny">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="Padding" Value="3,0" />
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
+  <Style Selector="Button.tiny:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SurfaceHigh}" />
+  </Style>
+
+  <!-- Ligne du sélecteur de types. La sélection se voit au cadre, pas seulement à la coche. -->
+  <Style Selector="Button.type">
+    <Setter Property="Background" Value="{DynamicResource SurfaceRaised}" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="8,4" />
+    <Setter Property="Margin" Value="0,0,6,6" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+  </Style>
+
+  <Style Selector="Button.type.selected">
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    <Setter Property="Background" Value="{DynamicResource SurfaceHigh}" />
+  </Style>
+
+  <Style Selector="TextBlock.badge">
+    <Setter Property="FontFamily" Value="Consolas,monospace" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <!-- Ce que la règle produirait. Un aperçu vaut mieux qu'une syntaxe à apprendre. -->
+  <Style Selector="Border.preview">
+    <Setter Property="Background" Value="{DynamicResource Surface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Stroke}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="10,6" />
+  </Style>
+
+  <Style Selector="Button">
+    <Setter Property="Background" Value="{DynamicResource SurfaceHigh}" />
+    <Setter Property="Foreground" Value="{DynamicResource Text}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Stroke}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="10,5" />
+  </Style>
+
+  <Style Selector="Button.accent">
+    <Setter Property="Background" Value="{DynamicResource Accent}" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentForeground}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <Style Selector="Button.ghost">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="Padding" Value="6,2" />
+  </Style>
+
+  <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SurfaceHigh}" />
+  </Style>
+
+  <!-- Retirer une étape : rouge et encadré, pour se remarquer avant le clic. -->
+  <Style Selector="Button.danger">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Danger}" />
+    <Setter Property="Foreground" Value="{DynamicResource Danger}" />
+    <Setter Property="Padding" Value="10,4" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+
+  <Style Selector="Button.danger:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SurfaceHigh}" />
+  </Style>
+
+  <!-- ==== Flux de règle ============================================================= -->
+
+  <!-- Une étape du flux. Le nœud est un bouton : il se sélectionne au clic, se parcourt
+       au clavier, et n'a besoin d'aucun code de vue pour cela. -->
+  <Style Selector="Button.node">
+    <Setter Property="Background" Value="{DynamicResource SurfaceRaised}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Stroke}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="10,8" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+
+  <Style Selector="Button.node:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SurfaceHigh}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource TextMuted}" />
+  </Style>
+
+  <!-- L'étape ouverte dans l'inspecteur : le lien entre les deux doit être évident. -->
+  <Style Selector="Button.node.selected">
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    <Setter Property="BorderThickness" Value="2" />
+    <Setter Property="Padding" Value="9,7" />
+  </Style>
+
+  <Style Selector="Button.node.selected /template/ ContentPresenter">
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+
+  <!-- Le rouge n'est pas décoratif : il marque l'action sans retour. -->
+  <Style Selector="Button.node.danger /template/ ContentPresenter">
+    <Setter Property="BorderBrush" Value="{DynamicResource Danger}" />
+  </Style>
+
+  <!-- Emplacement d'ajout : présent, mais visiblement pas encore une étape. -->
+  <Style Selector="Button.node.placeholder">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
+    <Setter Property="CornerRadius" Value="20" />
+  </Style>
+
+  <!-- Le ET / OU : un jeton rond, pas une carte. -->
+  <Style Selector="Button.node.gate">
+    <Setter Property="Background" Value="{DynamicResource SurfaceHigh}" />
+    <Setter Property="CornerRadius" Value="22" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+
+  <!-- Pastille d'icône, à gauche du titre d'un nœud. -->
+  <Style Selector="Border.nodeGlyph">
+    <Setter Property="Background" Value="{DynamicResource SurfaceHigh}" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Height" Value="28" />
+  </Style>
+
+  <Style Selector="Path.edge">
+    <Setter Property="Stroke" Value="{DynamicResource Stroke}" />
+    <Setter Property="StrokeThickness" Value="1.6" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+  </Style>
+
+  <!-- Une ligne de phrase qui se replie quand la place manque : l'éditeur se lit d'un
+       trait dans un panneau large, et sur deux lignes dans une colonne étroite, sans
+       jamais déborder. L'espacement est posé ici, pas répété sur chaque contrôle. -->
+  <Style Selector="WrapPanel.row > :is(Control)">
+    <Setter Property="Margin" Value="0,0,8,6" />
+  </Style>
+
+  <!-- Choix d'un dossier ou d'un programme : un bouton qui ouvre la fenêtre Windows.
+       Le chemin s'affiche, il ne se tape pas — une frappe dans un chemin ne se voit
+       qu'au moment où un fichier part au mauvais endroit. -->
+  <Style Selector="Button.path">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Background" Value="{DynamicResource Surface}" />
+    <Setter Property="Padding" Value="10,7" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+
+  <Style Selector="Button.path:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SurfaceHigh}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+  </Style>
+
+  <!-- Choix d'un type d'étape, dans l'inspecteur : une colonne de cibles larges. -->
+  <Style Selector="Button.choice">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Margin" Value="0,0,0,4" />
+    <Setter Property="Padding" Value="10,6" />
+  </Style>
+
+  <Style Selector="Button.choice:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SurfaceHigh}" />
+  </Style>
+
+  <Style Selector="TextBox">
+    <Setter Property="Background" Value="{DynamicResource Surface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Stroke}" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Padding" Value="8,5" />
+  </Style>
+
+  <Style Selector="ComboBox">
+    <Setter Property="Background" Value="{DynamicResource Surface}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource Stroke}" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="MinHeight" Value="30" />
+  </Style>
+
+  <Style Selector="ListBox">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+</Styles>

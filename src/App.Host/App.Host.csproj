@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Banog.Host</RootNamespace>
+    <AssemblyName>Banog</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <!-- Cible et déploiement : un seul exécutable natif, rien à installer côté utilisateur. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- Trimming : le mode complet est celui qu'impose l'AOT. Le XAML étant compilé et
+         la sérialisation passant par des source generators, il n'y a aucune racine de
+         réflexion à préserver — d'où l'absence de fichier TrimmerRoots. -->
+    <TrimMode>full</TrimMode>
+    <OptimizationPreference>Speed</OptimizationPreference>
+
+    <!-- Avalonia s'appuie sur COM pour le presse-papiers et le glisser-déposer Win32. -->
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+
+    <!-- Métadonnées d'exécution superflues pour un utilitaire desktop : elles gonflent
+         l'image native sans rien apporter ici. -->
+    <EventSourceSupport>false</EventSourceSupport>
+    <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <AutoreleasePoolSupport>false</AutoreleasePoolSupport>
+    <HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+
+    <!-- On veut que la moindre incompatibilité AOT sorte en erreur, pas en avertissement. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors>IL2026;IL2046;IL2072;IL2075;IL3050;IL3051</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\App.Core\App.Core.csproj" />
+    <ProjectReference Include="..\App.Watcher\App.Watcher.csproj" />
+    <ProjectReference Include="..\App.UI\App.UI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.18" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <!-- Outil de développement uniquement : jamais embarqué dans le binaire publié. -->
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.3.18" />
+  </ItemGroup>
+
+</Project>

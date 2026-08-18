@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Banog.Core</RootNamespace>
+    <AssemblyName>App.Core</AssemblyName>
+    <!-- Moteur métier pur : aucune référence UI, aucune référence Watcher. -->
+  </PropertyGroup>
+
+</Project>

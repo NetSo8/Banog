@@ -1,0 +1,33 @@
+bin/
+obj/
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+artifacts/
+publish/
+TestResults/
+
+# Fichiers temporaires et locaux
+*.tmp
+*.bak
+*.local.json
+rules.json
+
+# Secrets, certificats et variables d'environnement
+.env
+.env.*
+!.env.example
+*.secret
+*.credentials
+*.token
+*.pfx
+*.p12
+*.pem
+*.key
+*.crt
+*.cer
+secrets/

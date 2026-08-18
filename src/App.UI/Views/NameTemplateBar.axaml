@@ -1,0 +1,176 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Banog.UI.ViewModels"
+             xmlns:loc="using:Banog.UI.Localization"
+             x:Class="Banog.UI.Views.NameTemplateBar"
+             x:DataType="vm:NameTemplateBuilderViewModel">
+
+  <UserControl.Styles>
+
+    <!-- Un morceau de nom : une pastille qu'on glisse, qu'on édite, qu'on retire. -->
+    <Style Selector="Border.piece">
+      <Setter Property="Background" Value="{DynamicResource SurfaceRaised}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Stroke}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="10,4" />
+      <Setter Property="Margin" Value="0,0,8,8" />
+    </Style>
+
+    <!-- Le morceau en cours de glissement, puis celui qui recevrait le dépôt. -->
+    <Style Selector="Border.piece.dragging">
+      <Setter Property="Opacity" Value="0.35" />
+      <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+    </Style>
+
+    <Style Selector="Border.dropTarget > Border.piece">
+      <Setter Property="BorderBrush" Value="{DynamicResource Accent}" />
+      <Setter Property="BorderThickness" Value="2" />
+    </Style>
+
+  </UserControl.Styles>
+
+  <StackPanel Spacing="10">
+
+    <!-- L'aperçu d'abord : le résultat se lit avant même de toucher aux morceaux. -->
+    <Border Classes="preview" IsVisible="{Binding HasPreview}">
+      <StackPanel Spacing="2">
+        <TextBlock Classes="muted" FontSize="11" Text="{Binding PreviewLabel}" />
+        <TextBlock FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding Preview}" />
+        <TextBlock Classes="muted" FontSize="11" Text="{x:Static vm:NameTemplateBuilderViewModel.PreviewSample}" />
+      </StackPanel>
+    </Border>
+
+    <!-- Un sous-dossier reste replié tant qu'on n'en compose pas. -->
+    <Button Classes="pill" HorizontalAlignment="Left" IsVisible="{Binding !IsPaletteOpen}"
+            Command="{Binding OpenPaletteCommand}"
+            Content="{x:Static vm:NameTemplateBuilderViewModel.OpenPaletteLabel}" />
+
+    <StackPanel Spacing="10" IsVisible="{Binding IsPaletteOpen}">
+
+      <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="{Binding Hint}" />
+
+      <!-- Composition en morceaux. -->
+      <StackPanel Spacing="8" IsVisible="{Binding !IsAdvanced}">
+
+        <Border Classes="panel" Padding="10,8">
+          <Panel>
+
+            <ItemsControl x:Name="PartsList" ItemsSource="{Binding Parts}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <WrapPanel />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:TemplatePartViewModel">
+                  <Border Background="Transparent"
+                          PointerPressed="Chip_PointerPressed"
+                          PointerMoved="Chip_PointerMoved"
+                          PointerReleased="Chip_PointerReleased"
+                          PointerCaptureLost="Chip_PointerCaptureLost">
+                    <Border Classes="piece">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+
+                        <TextBlock Classes="muted" Text="≡" FontSize="13" VerticalAlignment="Center"
+                                   ToolTip.Tip="{DynamicResource Tpl_Drag_Tip}" />
+
+                        <!-- Texte tapé tel quel. -->
+                        <TextBox IsVisible="{Binding IsLiteral}" Text="{Binding Text}"
+                                 MinWidth="70" MaxWidth="180" FontSize="11" Padding="6,2"
+                                 Watermark="{DynamicResource Tpl_Text_Watermark}" />
+
+                        <!-- Jeton : un libellé, et un format quand il s'en règle. -->
+                        <StackPanel IsVisible="{Binding IsToken}" Orientation="Horizontal" Spacing="6">
+                          <TextBlock Text="{Binding Label}" FontSize="11" VerticalAlignment="Center" />
+                          <ComboBox IsVisible="{Binding UsesFormat}" FontSize="11" MinWidth="160"
+                                    ItemsSource="{Binding FormatOptions}" SelectedItem="{Binding Format}">
+                            <ComboBox.ItemTemplate>
+                              <DataTemplate x:DataType="vm:TemplateFormatOption">
+                                <TextBlock FontSize="11" Text="{Binding Label}" />
+                              </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                          </ComboBox>
+                        </StackPanel>
+
+                        <Button Classes="tiny" Content="✕" ToolTip.Tip="{DynamicResource Tpl_Remove_Tip}"
+                                Command="{Binding $parent[ItemsControl].((vm:NameTemplateBuilderViewModel)DataContext).RemovePartCommand}"
+                                CommandParameter="{Binding}" />
+
+                      </StackPanel>
+                    </Border>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Classes="muted" FontSize="11" IsHitTestVisible="False"
+                       HorizontalAlignment="Left" IsVisible="{Binding !HasParts}"
+                       Text="{DynamicResource Tpl_Empty}" />
+
+          </Panel>
+        </Border>
+
+        <!-- L'extension : toujours la dernière, après le point. Rien ne peut la suivre. -->
+        <StackPanel IsVisible="{Binding IsFileName}" Spacing="4">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <TextBlock Text="." FontSize="15" FontWeight="Bold" VerticalAlignment="Center" />
+            <Border Classes="piece" IsVisible="{Binding HasExtension}" ToolTip.Tip="{DynamicResource Tpl_Ext_Tip}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBox Text="{Binding ExtensionText}" MinWidth="70" MaxWidth="160"
+                         FontSize="11" Padding="6,2" Watermark="{DynamicResource Tpl_Ext_Watermark}" />
+                <Button Classes="tiny" Content="✕" ToolTip.Tip="{DynamicResource Tpl_Ext_Remove_Tip}"
+                        Command="{Binding RemoveExtensionCommand}" />
+              </StackPanel>
+            </Border>
+            <Button Classes="pill" IsVisible="{Binding !HasExtension}" Command="{Binding AddExtensionCommand}"
+                    Content="{DynamicResource Tpl_AddExtension}" />
+          </StackPanel>
+        </StackPanel>
+
+        <!-- Ce qu'on peut ajouter : les mêmes libellés que les morceaux. -->
+        <ItemsControl ItemsSource="{x:Static vm:NameTemplateBuilderViewModel.PartKinds}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:TemplatePartKind">
+              <Button Classes="pill"
+                      Content="{Binding Converter={x:Static loc:Labels.AddDisplay}}"
+                      Command="{Binding $parent[ItemsControl].((vm:NameTemplateBuilderViewModel)DataContext).AddPartCommand}"
+                      CommandParameter="{Binding}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <StackPanel Spacing="6" IsVisible="{Binding WarnsMissingExtension}">
+          <TextBlock Classes="warning" FontSize="11" TextWrapping="Wrap"
+                     Text="{DynamicResource Tpl_Warn_NoExtension}" />
+        </StackPanel>
+
+        <Button Classes="ghost" FontSize="11" HorizontalAlignment="Left"
+                Command="{Binding ToggleAdvancedCommand}"
+                Content="{DynamicResource Tpl_Advanced_On}" />
+      </StackPanel>
+
+      <!-- Repli pour les gabarits que les morceaux ne savent pas représenter. Rien n'est
+           jamais réécrit de force : le gabarit brut reste le maître. -->
+      <StackPanel Spacing="6" IsVisible="{Binding IsAdvanced}">
+        <TextBox Text="{Binding Template}" FontFamily="Consolas,monospace"
+                 Watermark="{}{date}_{nom}.{extension}" />
+        <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                   Text="{DynamicResource Tpl_Advanced_Hint}" />
+        <StackPanel Spacing="6" IsVisible="{Binding WarnsMissingExtension}">
+          <TextBlock Classes="warning" FontSize="11" TextWrapping="Wrap"
+                     Text="{DynamicResource Tpl_Warn_NoExtension}" />
+        </StackPanel>
+        <Button Classes="ghost" FontSize="11" HorizontalAlignment="Left"
+                Command="{Binding ToggleAdvancedCommand}"
+                Content="{DynamicResource Tpl_Advanced_Off}" />
+      </StackPanel>
+
+    </StackPanel>
+  </StackPanel>
+</UserControl>

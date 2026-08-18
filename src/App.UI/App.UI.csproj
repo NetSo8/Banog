@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Banog.UI</RootNamespace>
+    <AssemblyName>App.UI</AssemblyName>
+
+    <!-- XAML compilé à la build : aucun parseur XAML à l'exécution, donc aucune
+         réflexion dynamique. C'est la condition pour que Avalonia passe sous AOT. -->
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <EnableAvaloniaXamlCompilation>true</EnableAvaloniaXamlCompilation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\App.Core\App.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.18" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.18" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.18" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+</Project>

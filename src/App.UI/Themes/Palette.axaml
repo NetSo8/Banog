@@ -1,0 +1,50 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Une seule palette, deux valeurs par clé. Les styles ne connaissent que les clés :
+       aucun style n'est dupliqué entre clair et sombre.
+
+       Les consommateurs doivent utiliser DynamicResource, sinon la bascule de thème à
+       chaud ne repeint rien. -->
+  <ResourceDictionary.ThemeDictionaries>
+
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="Surface" Color="#0E0F12" />
+      <SolidColorBrush x:Key="SurfaceRaised" Color="#16181D" />
+      <SolidColorBrush x:Key="SurfaceHigh" Color="#1E2128" />
+      <SolidColorBrush x:Key="Stroke" Color="#2A2E37" />
+      <SolidColorBrush x:Key="Text" Color="#E6E8EC" />
+      <SolidColorBrush x:Key="TextMuted" Color="#8A909C" />
+      <SolidColorBrush x:Key="Accent" Color="#4CC2FF" />
+      <SolidColorBrush x:Key="AccentForeground" Color="#0E0F12" />
+      <SolidColorBrush x:Key="Danger" Color="#FF6B6B" />
+      <SolidColorBrush x:Key="Success" Color="#3DD68C" />
+      <SolidColorBrush x:Key="Warning" Color="#F0B849" />
+
+      <!-- La barre latérale se détache du contenu par le fond, pas par un trait. -->
+      <SolidColorBrush x:Key="Sidebar" Color="#08090B" />
+      <SolidColorBrush x:Key="SidebarActive" Color="#1E2128" />
+    </ResourceDictionary>
+
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="Surface" Color="#F7F8FA" />
+      <SolidColorBrush x:Key="SurfaceRaised" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="SurfaceHigh" Color="#EDEFF3" />
+      <SolidColorBrush x:Key="Stroke" Color="#D8DCE3" />
+      <SolidColorBrush x:Key="Text" Color="#15171C" />
+      <SolidColorBrush x:Key="TextMuted" Color="#646B78" />
+      <!-- Accent assombri : #4CC2FF sur fond clair tombe sous le seuil de contraste. -->
+      <SolidColorBrush x:Key="Accent" Color="#0B72AE" />
+      <SolidColorBrush x:Key="AccentForeground" Color="#FFFFFF" />
+      <SolidColorBrush x:Key="Danger" Color="#C0392B" />
+      <!-- Assombris comme l'accent : le vert et le jaune clairs passent mal sur fond blanc. -->
+      <SolidColorBrush x:Key="Success" Color="#1F8A54" />
+      <SolidColorBrush x:Key="Warning" Color="#8A5A00" />
+
+      <SolidColorBrush x:Key="Sidebar" Color="#EBEEF3" />
+      <SolidColorBrush x:Key="SidebarActive" Color="#FFFFFF" />
+    </ResourceDictionary>
+
+  </ResourceDictionary.ThemeDictionaries>
+
+</ResourceDictionary>

@@ -1,0 +1,330 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Banog.UI.ViewModels"
+             xmlns:svc="using:Banog.UI.Services"
+             xmlns:loc="using:Banog.UI.Localization"
+             xmlns:views="using:Banog.UI.Views"
+             x:Class="Banog.UI.App"
+             RequestedThemeVariant="Default">
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://App.UI/Themes/Palette.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://App.UI/Themes/Theme.axaml" />
+  </Application.Styles>
+
+  <!-- Éditeurs par type de condition / action.
+
+       Chaque éditeur se lit comme une phrase : « le nom — contient — facture », pas comme
+       un formulaire de champs étiquetés. Ajouter un type (contenu, OCR) = ajouter un
+       viewmodel et un DataTemplate ici, rien d'autre dans l'UI ne bouge. -->
+  <Application.DataTemplates>
+
+    <!-- Le type de fichier ne se tape plus : on choisit dans une liste cherchable, et les
+         types retenus restent visibles en pastilles. « photo » trouve jpg, « vidéo »
+         trouve mp4 — sans avoir à connaître les extensions. -->
+    <DataTemplate DataType="vm:ExtensionConditionViewModel">
+      <StackPanel Spacing="8">
+
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Classes="glue" Text="{DynamicResource Cond_Type}" />
+          <ComboBox Classes="enum" ItemsSource="{x:Static vm:ExtensionConditionViewModel.MatchOptions}"
+                    SelectedItem="{Binding Match}" MinWidth="130" />
+        </StackPanel>
+
+        <TextBlock Classes="muted" FontSize="11" IsVisible="{Binding !Types.HasSelection}"
+                   Text="{DynamicResource Cond_Type_None}" />
+
+        <ItemsControl ItemsSource="{Binding Types.Selected}" IsVisible="{Binding Types.HasSelection}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="svc:FileTypeOption">
+              <Border Classes="pastille" ToolTip.Tip="{Binding Label}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Classes="badge" Text="{Binding Badge}" VerticalAlignment="Center" />
+                  <Button Classes="tiny" Content="✕" ToolTip.Tip="{DynamicResource Types_Remove_Tip}"
+                          Command="{Binding $parent[ItemsControl].((vm:ExtensionConditionViewModel)DataContext).Types.RemoveCommand}"
+                          CommandParameter="{Binding}" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding !Types.IsOpen}">
+          <Button Classes="pill" Command="{Binding Types.OpenCommand}"
+                  Content="{Binding Types.SelectionLabel}" />
+          <Button Classes="ghost" FontSize="11" Content="{DynamicResource Types_ClearAll}"
+                  IsVisible="{Binding Types.HasSelection}"
+                  Command="{Binding Types.ClearCommand}" />
+        </StackPanel>
+
+        <!-- Sélecteur : recherche, catégories, et l'échappatoire pour une extension rare. -->
+        <Border Classes="panel" Padding="10" IsVisible="{Binding Types.IsOpen}">
+          <StackPanel Spacing="8">
+
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Grid.Column="0" Text="{Binding Types.Search}"
+                       Watermark="{DynamicResource Types_Search_Watermark}" />
+              <Button Grid.Column="1" Classes="ghost" Margin="6,0,0,0" Content="{DynamicResource Types_Close}"
+                      Command="{Binding Types.CloseCommand}" />
+            </Grid>
+
+            <Button Classes="pill" IsVisible="{Binding Types.CanAddCustom}"
+                    Content="{Binding Types.CustomLabel}"
+                    Command="{Binding Types.AddCustomCommand}"
+                    ToolTip.Tip="{DynamicResource Types_Custom_Tip}" />
+
+            <TextBlock Classes="muted" FontSize="11" IsVisible="{Binding !Types.HasResults}"
+                       Text="{DynamicResource Types_NoResults}" />
+
+            <ScrollViewer MaxHeight="260" HorizontalScrollBarVisibility="Disabled">
+              <ItemsControl ItemsSource="{Binding Types.Results}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:FileTypeGroupViewModel">
+                    <StackPanel Spacing="4" Margin="0,0,0,10">
+
+                      <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Classes="section" Margin="0" Text="{Binding Category}"
+                                   VerticalAlignment="Center" />
+                        <Button Classes="ghost" FontSize="11" Content="{DynamicResource Types_AddAll}"
+                                Command="{Binding AddAllCommand}" />
+                      </StackPanel>
+
+                      <ItemsControl ItemsSource="{Binding Items}">
+                        <ItemsControl.ItemsPanel>
+                          <ItemsPanelTemplate>
+                            <WrapPanel />
+                          </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:FileTypeItemViewModel">
+                            <Button Classes="type" Classes.selected="{Binding IsSelected}"
+                                    Command="{Binding ToggleCommand}">
+                              <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="✓" FontSize="11" VerticalAlignment="Center"
+                                           IsVisible="{Binding IsSelected}" />
+                                <TextBlock Classes="badge" Text="{Binding Badge}" VerticalAlignment="Center" />
+                                <TextBlock Classes="muted" FontSize="11" Text="{Binding Label}"
+                                           VerticalAlignment="Center" />
+                              </StackPanel>
+                            </Button>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+
+          </StackPanel>
+        </Border>
+
+      </StackPanel>
+    </DataTemplate>
+
+    <!-- Composition d'un nom ou d'un sous-dossier. Le moteur lit toujours un gabarit à
+         accolades, mais personne ne l'écrit : on empile des morceaux qu'on réordonne au
+         glisser-déposer, l'extension reste à la fin, et on voit le résultat. Le même
+         éditeur sert au renommage et aux dossiers de destination. -->
+    <DataTemplate DataType="vm:NameTemplateBuilderViewModel">
+      <views:NameTemplateBar />
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:NameConditionViewModel">
+      <StackPanel Spacing="8">
+        <WrapPanel Classes="row">
+          <TextBlock Classes="glue" Text="{DynamicResource Cond_Name}" />
+          <ComboBox Classes="enum" ItemsSource="{x:Static vm:NameConditionViewModel.TargetOptions}"
+                    SelectedItem="{Binding Target}" MinWidth="140" />
+          <ComboBox Classes="enum" ItemsSource="{x:Static vm:NameConditionViewModel.ModeOptions}"
+                    SelectedItem="{Binding Mode}" MinWidth="160" />
+        </WrapPanel>
+        <TextBox Text="{Binding Value}" Watermark="facture" />
+        <CheckBox IsChecked="{Binding CaseSensitive}" Content="{DynamicResource Cond_Name_CaseSensitive}" FontSize="11" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:DateConditionViewModel">
+      <StackPanel Spacing="8">
+        <WrapPanel Classes="row">
+          <TextBlock Classes="glue" Text="{DynamicResource Cond_Date}" />
+          <ComboBox Classes="enum" ItemsSource="{x:Static vm:DateConditionViewModel.FieldOptions}"
+                    SelectedItem="{Binding Field}" MinWidth="140" />
+          <ComboBox Classes="enum" ItemsSource="{x:Static vm:DateConditionViewModel.ComparisonOptions}"
+                    SelectedItem="{Binding Comparison}" MinWidth="170" />
+        </WrapPanel>
+
+        <WrapPanel Classes="row" IsVisible="{Binding UsesDuration}">
+          <TextBox Text="{Binding Amount}" Width="70" />
+          <ComboBox Classes="enum" ItemsSource="{x:Static vm:DateConditionViewModel.UnitOptions}"
+                    SelectedItem="{Binding Unit}" MinWidth="110" />
+        </WrapPanel>
+
+        <DatePicker SelectedDate="{Binding Instant}" IsVisible="{Binding UsesInstant}"
+                    HorizontalAlignment="Left" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:SizeConditionViewModel">
+      <StackPanel Spacing="8">
+        <WrapPanel Classes="row">
+          <TextBlock Classes="glue" Text="{DynamicResource Cond_Size}" />
+          <ComboBox Classes="enum" ItemsSource="{x:Static vm:SizeConditionViewModel.ComparisonOptions}"
+                    SelectedItem="{Binding Comparison}" MinWidth="150" />
+        </WrapPanel>
+        <WrapPanel Classes="row">
+          <TextBox Text="{Binding Value}" Width="80" />
+          <ComboBox Classes="enum" ItemsSource="{x:Static vm:SizeConditionViewModel.UnitOptions}"
+                    SelectedItem="{Binding Unit}" MinWidth="100" />
+        </WrapPanel>
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:SourceFolderConditionViewModel">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="glue" Text="{DynamicResource Cond_Source}" />
+
+        <Button Classes="path" ToolTip.Tip="{Binding PathDisplay}"
+                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).BrowseFolderCommand}"
+                CommandParameter="{Binding}">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Grid.Column="0" Text="{Binding PathDisplay}" TextTrimming="CharacterEllipsis"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Classes="muted" FontSize="11" Margin="10,0,0,0"
+                       VerticalAlignment="Center" Text="{DynamicResource Common_Browse}" />
+          </Grid>
+        </Button>
+
+        <CheckBox IsChecked="{Binding IncludeSubfolders}" Content="{DynamicResource Cond_Source_IncludeSub}" FontSize="11" />
+      </StackPanel>
+    </DataTemplate>
+
+    <!-- La destination pose deux questions distinctes : dans quel dossier, et sous quel
+         sous-dossier. Le sous-dossier se compose comme un nom, avec les mêmes pastilles. -->
+    <DataTemplate DataType="vm:MoveActionViewModel">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="glue" Text="{DynamicResource Act_MoveTo}" />
+
+        <Button Classes="path" ToolTip.Tip="{Binding BasePathDisplay}"
+                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).BrowseFolderCommand}"
+                CommandParameter="{Binding}">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Grid.Column="0" Text="{Binding BasePathDisplay}" TextTrimming="CharacterEllipsis"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Classes="muted" FontSize="11" Margin="10,0,0,0"
+                       VerticalAlignment="Center" Text="{DynamicResource Common_Browse}" />
+          </Grid>
+        </Button>
+
+        <ContentControl Content="{Binding Subfolder}" />
+
+        <CheckBox IsChecked="{Binding CreateDirectories}" Content="{DynamicResource Act_CreateDirs}" FontSize="11" />
+
+        <StackPanel Spacing="6">
+          <TextBlock Classes="glue" Text="{DynamicResource Act_OnConflict}" FontSize="11" />
+          <ComboBox Classes="enum" HorizontalAlignment="Stretch"
+                    ItemsSource="{x:Static vm:ActionViewModel.ConflictOptions}"
+                    SelectedItem="{Binding OnConflict}" />
+        </StackPanel>
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:CopyActionViewModel">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="glue" Text="{DynamicResource Act_CopyTo}" />
+
+        <Button Classes="path" ToolTip.Tip="{Binding BasePathDisplay}"
+                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).BrowseFolderCommand}"
+                CommandParameter="{Binding}">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Grid.Column="0" Text="{Binding BasePathDisplay}" TextTrimming="CharacterEllipsis"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Classes="muted" FontSize="11" Margin="10,0,0,0"
+                       VerticalAlignment="Center" Text="{DynamicResource Common_Browse}" />
+          </Grid>
+        </Button>
+
+        <ContentControl Content="{Binding Subfolder}" />
+
+        <CheckBox IsChecked="{Binding CreateDirectories}" Content="{DynamicResource Act_CreateDirs}" FontSize="11" />
+
+        <StackPanel Spacing="6">
+          <TextBlock Classes="glue" Text="{DynamicResource Act_OnConflict}" FontSize="11" />
+          <ComboBox Classes="enum" HorizontalAlignment="Stretch"
+                    ItemsSource="{x:Static vm:ActionViewModel.ConflictOptions}"
+                    SelectedItem="{Binding OnConflict}" />
+        </StackPanel>
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:RenameActionViewModel">
+      <StackPanel Spacing="10">
+        <TextBlock Classes="glue" Text="{DynamicResource Act_Rename}" />
+
+        <ContentControl Content="{Binding Builder}" />
+
+        <StackPanel Spacing="6">
+          <TextBlock Classes="glue" Text="{DynamicResource Act_OnConflict}" FontSize="11" />
+          <ComboBox Classes="enum" HorizontalAlignment="Stretch"
+                    ItemsSource="{x:Static vm:ActionViewModel.ConflictOptions}"
+                    SelectedItem="{Binding OnConflict}" />
+        </StackPanel>
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:DeleteActionViewModel">
+      <StackPanel Spacing="6">
+        <CheckBox IsChecked="{Binding UseRecycleBin}" Content="{DynamicResource Act_Delete_Recycle}" />
+        <TextBlock Classes="error" FontSize="11" TextWrapping="Wrap"
+                   IsVisible="{Binding IsDestructive}"
+                   Text="{DynamicResource Act_Delete_Warning}" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:RunCommandActionViewModel">
+      <StackPanel Spacing="8">
+        <TextBlock Classes="glue" Text="{DynamicResource Act_Run}" />
+
+        <Button Classes="path" ToolTip.Tip="{Binding ExecutableDisplay}"
+                Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).BrowseExecutableCommand}"
+                CommandParameter="{Binding}">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Grid.Column="0" Text="{Binding ExecutableDisplay}" TextTrimming="CharacterEllipsis"
+                       VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Classes="muted" FontSize="11" Margin="10,0,0,0"
+                       VerticalAlignment="Center" Text="{DynamicResource Common_Browse}" />
+          </Grid>
+        </Button>
+
+        <TextBlock Classes="glue" Text="{DynamicResource Act_Run_With}" />
+        <TextBox Text="{Binding Arguments}" Watermark="{DynamicResource Act_Run_Args}" />
+
+        <CheckBox IsChecked="{Binding WaitForExit}" Content="{DynamicResource Act_Run_Wait}" FontSize="11" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:UnsupportedConditionViewModel">
+      <TextBlock Classes="muted" TextWrapping="Wrap" Text="{DynamicResource Cond_Unsupported}" />
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:UnsupportedActionViewModel">
+      <TextBlock Classes="muted" TextWrapping="Wrap" Text="{DynamicResource Act_Unsupported}" />
+    </DataTemplate>
+
+  </Application.DataTemplates>
+
+</Application>

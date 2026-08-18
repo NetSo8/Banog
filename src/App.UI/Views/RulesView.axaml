@@ -1,0 +1,372 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Banog.UI.ViewModels"
+             xmlns:flow="using:Banog.UI.ViewModels.Flow"
+             xmlns:svc="using:Banog.UI.Services"
+             xmlns:loc="using:Banog.UI.Localization"
+             xmlns:views="using:Banog.UI.Views"
+             x:Class="Banog.UI.Views.RulesView"
+             x:DataType="vm:MainWindowViewModel">
+
+  <!-- ================= RÈGLES =================
+       Deux temps, jamais les deux à la fois : la liste de ce qui existe, puis le flux
+       d'une règle qu'on a choisi de modifier. Ce qui laisse toute la largeur à chacun. -->
+  <Panel>
+
+    <!-- ========== 1. La liste ========== -->
+    <Grid IsVisible="{Binding ShowsRuleList}" RowDefinitions="Auto,*" Margin="20">
+
+      <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+        <StackPanel Grid.Column="0" Spacing="2">
+          <TextBlock Classes="h1" Text="{DynamicResource Rules_Title}" />
+          <TextBlock Classes="muted" Text="{DynamicResource Rules_Subtitle}" />
+        </StackPanel>
+
+        <Button Grid.Column="1" Classes="accent" VerticalAlignment="Center"
+                Command="{Binding AddRuleCommand}" Content="{DynamicResource Rules_NewRule}" />
+      </Grid>
+
+      <Border Grid.Row="1" Classes="panel">
+        <Panel>
+          <StackPanel IsVisible="{Binding !HasRules}" VerticalAlignment="Center" Spacing="12">
+            <TextBlock Classes="empty" Margin="20,0" Text="{DynamicResource Rules_List_Empty}" />
+            <Button Classes="accent" HorizontalAlignment="Center"
+                    Command="{Binding AddRuleCommand}"
+                    Content="{DynamicResource Mon_CreateFirstRule}" />
+          </StackPanel>
+
+          <ScrollViewer Padding="14" IsVisible="{Binding HasRules}"
+                        HorizontalScrollBarVisibility="Disabled">
+            <ItemsControl ItemsSource="{Binding Rules}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:RuleViewModel">
+
+                  <!-- Une règle se lit d'un coup d'œil : son état, son nom, ce qu'elle
+                       fait, et ce qu'elle a fait. Les commandes sont au bout. -->
+                  <Border Classes="card" Padding="14">
+                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto">
+
+                      <CheckBox Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Margin="0,0,12,0"
+                                VerticalAlignment="Top" IsChecked="{Binding Enabled}"
+                                ToolTip.Tip="{DynamicResource Rules_ToggleRule_Tip}" />
+
+                      <StackPanel Grid.Row="0" Grid.Column="1" Spacing="3">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Classes="muted" FontSize="11" Text="{Binding Summary}"
+                                   TextWrapping="Wrap" MaxLines="2"
+                                   TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
+
+                      <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Spacing="6"
+                                  Margin="0,8,0,0">
+                        <TextBlock Classes="muted" FontSize="11" Text="{Binding StateLabel}" />
+                        <TextBlock Classes="muted" FontSize="11" Text="·" />
+                        <TextBlock Classes="muted" FontSize="11" Text="{Binding TriggerLabel}" />
+                      </StackPanel>
+
+                      <StackPanel Grid.Row="0" Grid.RowSpan="2" Grid.Column="2"
+                                  Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <Button Content="{DynamicResource Mon_Edit}"
+                                Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).EditRuleCommand}"
+                                CommandParameter="{Binding}" />
+                        <Button Classes="ghost" Content="{DynamicResource Rules_Duplicate}"
+                                Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).DuplicateRuleCommand}"
+                                CommandParameter="{Binding}" />
+                        <Button Classes="ghost" Content="{DynamicResource Rules_Delete}"
+                                Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).RemoveRuleCommand}"
+                                CommandParameter="{Binding}" />
+                      </StackPanel>
+
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Panel>
+      </Border>
+    </Grid>
+
+    <!-- ========== 2. Le flux d'une règle ==========
+         Le fichier entre à gauche, traverse les conditions, puis les actions dans leur
+         ordre d'exécution. -->
+    <Grid IsVisible="{Binding IsFlowOpen}" RowDefinitions="Auto,*" Margin="20">
+
+      <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="0,0,0,14">
+        <Button Grid.Column="0" Classes="ghost" VerticalAlignment="Center" Margin="0,0,12,0"
+                Command="{Binding CloseRuleCommand}" Content="{DynamicResource Rules_Back}" />
+
+        <TextBox Grid.Column="1" Text="{Binding SelectedRule.Name}" FontSize="16"
+                 FontWeight="SemiBold" Watermark="{DynamicResource Rule_NameWatermark}" />
+      </Grid>
+
+      <Grid Grid.Row="1" ColumnDefinitions="*,14,340">
+
+        <Border Grid.Column="0" Classes="panel">
+          <Grid RowDefinitions="*,Auto">
+
+            <views:FlowSurface Grid.Row="0" Background="{DynamicResource Surface}"
+                               BorderBrush="{DynamicResource Stroke}" BorderThickness="0,0,0,1"
+                               Zoom="{Binding Flow.Zoom, Mode=TwoWay}"
+                               OffsetX="{Binding Flow.OffsetX, Mode=TwoWay}"
+                               OffsetY="{Binding Flow.OffsetY, Mode=TwoWay}">
+
+              <Panel Width="{Binding Flow.CanvasWidth}" Height="{Binding Flow.CanvasHeight}">
+
+                <!-- Les liens d'abord : ils passent sous les nœuds. -->
+                <ItemsControl ItemsSource="{Binding Flow.Edges}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <Canvas />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="flow:FlowEdgeViewModel">
+                      <Path Classes="edge" Data="{Binding Geometry}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <ItemsControl ItemsSource="{Binding Flow.Nodes}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <Canvas />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+
+                  <!-- La position calculée est portée par le conteneur : le gabarit du
+                       nœud n'a pas à connaître le canevas. -->
+                  <ItemsControl.Styles>
+                    <Style Selector="ItemsControl > ContentPresenter" x:DataType="flow:FlowNodeViewModel">
+                      <Setter Property="Canvas.Left" Value="{Binding X}" />
+                      <Setter Property="Canvas.Top" Value="{Binding Y}" />
+                    </Style>
+                  </ItemsControl.Styles>
+
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="flow:FlowNodeViewModel">
+                      <Button Classes="node"
+                              Classes.selected="{Binding IsSelected}"
+                              Classes.danger="{Binding IsDestructive}"
+                              Classes.gate="{Binding IsGate}"
+                              Classes.placeholder="{Binding IsPlaceholder}"
+                              Width="{Binding Width}" Height="{Binding Height}"
+                              Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).Flow.SelectCommand}"
+                              CommandParameter="{Binding}">
+                        <Panel>
+
+                          <!-- ET / OU : un jeton, pas une carte. -->
+                          <TextBlock IsVisible="{Binding IsGate}" Text="{Binding Title}"
+                                     FontWeight="SemiBold" FontSize="12"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                          <StackPanel IsVisible="{Binding IsPlaceholder}" Orientation="Horizontal"
+                                      Spacing="8" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Glyph}" FontSize="13" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Title}" FontSize="12" VerticalAlignment="Center" />
+                          </StackPanel>
+
+                          <Grid IsVisible="{Binding HasSubtitle}" ColumnDefinitions="Auto,*"
+                                VerticalAlignment="Center">
+                            <Border Grid.Column="0" Classes="nodeGlyph">
+                              <TextBlock Text="{Binding Glyph}" FontSize="13"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0" Spacing="2">
+                              <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="12"
+                                           TextTrimming="CharacterEllipsis" />
+                                <Border Classes="chip" IsVisible="{Binding IsNegated}" Padding="5,0">
+                                  <TextBlock Classes="warning" FontSize="10"
+                                             Text="{DynamicResource Rule_Unless}" />
+                                </Border>
+                              </StackPanel>
+                              <TextBlock Classes="muted" FontSize="11" Text="{Binding Subtitle}"
+                                         TextTrimming="CharacterEllipsis" MaxLines="2"
+                                         TextWrapping="Wrap" />
+                            </StackPanel>
+                          </Grid>
+
+                        </Panel>
+                      </Button>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+              </Panel>
+            </views:FlowSurface>
+
+            <!-- Barre du bas : l'essai à blanc, et la commande de la vue. -->
+            <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="10,8">
+              <Button Grid.Column="0" Content="{DynamicResource Rule_Test}"
+                      Command="{Binding TestRuleCommand}"
+                      ToolTip.Tip="{DynamicResource Rule_Test_Hint}" />
+
+              <TextBlock Grid.Column="1" Margin="10,0" VerticalAlignment="Center" FontSize="11"
+                         TextTrimming="CharacterEllipsis"
+                         Text="{Binding TestResult}"
+                         IsVisible="{Binding HasTestResult}"
+                         Classes.error="{Binding TestMatched, Converter={x:Static svc:UiConverters.Not}}" />
+
+              <TextBlock Grid.Column="1" Classes="muted" FontSize="11" Margin="10,0"
+                         VerticalAlignment="Center" IsVisible="{Binding !HasTestResult}"
+                         TextTrimming="CharacterEllipsis"
+                         Text="{DynamicResource Flow_Hint}" />
+
+              <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2">
+                <Button Classes="tiny" Content="－" Command="{Binding Flow.ZoomOutCommand}"
+                        ToolTip.Tip="{DynamicResource Flow_ZoomOut}" />
+                <Button Classes="tiny" Content="⌂" Command="{Binding Flow.ResetViewCommand}"
+                        ToolTip.Tip="{DynamicResource Flow_ZoomReset}" />
+                <Button Classes="tiny" Content="＋" Command="{Binding Flow.ZoomInCommand}"
+                        ToolTip.Tip="{DynamicResource Flow_ZoomIn}" />
+              </StackPanel>
+            </Grid>
+          </Grid>
+        </Border>
+
+        <!-- ========== Inspecteur de l'étape choisie ==========
+             Il n'écrit aucun formulaire : il présente l'éditeur de la condition ou de
+             l'action, celui-là même que la version en liste utilisait. -->
+        <Border Grid.Column="2" Classes="panel">
+          <Panel>
+            <TextBlock Classes="empty" IsVisible="{Binding !Flow.HasSelection}"
+                       Text="{DynamicResource Flow_Inspector_Empty}" />
+
+            <ScrollViewer IsVisible="{Binding Flow.HasSelection}" Padding="14"
+                          HorizontalScrollBarVisibility="Disabled">
+              <StackPanel Spacing="14">
+
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="title" Text="{Binding Flow.SelectedNode.Title}" />
+                  <TextBlock Classes="muted" FontSize="11" IsVisible="{Binding Flow.ShowsEditor}"
+                             Text="{Binding Flow.SelectedNode.Subtitle}" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <!-- Déclencheur : les dossiers surveillés, et ce qui vaut pour la règle. -->
+                <StackPanel Spacing="10" IsVisible="{Binding Flow.ShowsTrigger}">
+                  <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                             Text="{DynamicResource Flow_Trigger_Note}" />
+
+                  <TextBlock Classes="section" Margin="0,4,0,0" Text="{DynamicResource Flow_Folders}" />
+                  <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                             Text="{DynamicResource Flow_Folders_Note}" />
+
+                  <ItemsControl ItemsSource="{Binding Folders}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:WatchedFolderViewModel">
+                        <Border Classes="card" Padding="10,8">
+                          <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <CheckBox Grid.Row="0" Grid.Column="0" IsChecked="{Binding Enabled}"
+                                      Content="{Binding ShortName}" ToolTip.Tip="{Binding Path}" />
+                            <Button Grid.Row="0" Grid.Column="1" Classes="tiny" Content="✕"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="{DynamicResource Rules_RemoveFolder}"
+                                    Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).RemoveFolderCommand}"
+                                    CommandParameter="{Binding}" />
+                            <CheckBox Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+                                      Margin="24,2,0,0" FontSize="11"
+                                      IsChecked="{Binding IncludeSubfolders}"
+                                      Content="{DynamicResource Rules_IncludeSubfolders}" />
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
+                  <TextBlock Classes="muted" FontSize="11" IsVisible="{Binding !HasFolders}"
+                             TextWrapping="Wrap" Text="{DynamicResource State_NothingWatched}" />
+
+                  <Button Classes="ghost" HorizontalAlignment="Left"
+                          Command="{Binding AddFolderCommand}"
+                          Content="{DynamicResource Rules_ChooseFolder}" />
+
+                  <CheckBox FontSize="11" Margin="0,6,0,0"
+                            IsChecked="{Binding SelectedRule.StopProcessingOnMatch}"
+                            Content="{DynamicResource Rule_StopProcessing}" />
+                </StackPanel>
+
+                <!-- ET / OU -->
+                <StackPanel Spacing="8" IsVisible="{Binding Flow.ShowsGate}">
+                  <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                             Text="{DynamicResource Flow_Gate_Note}" />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <ComboBox Classes="enum" ItemsSource="{x:Static flow:RuleFlowViewModel.MatchOptions}"
+                              SelectedItem="{Binding SelectedRule.Match}" MinWidth="130" />
+                    <TextBlock Classes="glue" FontSize="11" TextWrapping="Wrap"
+                               Text="{DynamicResource Flow_Gate_Suffix}" />
+                  </StackPanel>
+                </StackPanel>
+
+                <!-- Condition ou action : l'éditeur existant, tel quel. -->
+                <StackPanel Spacing="12" IsVisible="{Binding Flow.ShowsEditor}">
+                  <ContentControl Content="{Binding Flow.SelectedNode.Editor}" />
+
+                  <CheckBox FontSize="11" IsVisible="{Binding Flow.SelectedCondition,
+                                                      Converter={x:Static svc:UiConverters.IsNotNull}}"
+                            IsChecked="{Binding Flow.SelectedCondition.Negate}"
+                            Content="{DynamicResource Rule_Unless}"
+                            ToolTip.Tip="{DynamicResource Rule_Unless_Tip}" />
+
+                  <StackPanel Spacing="6" IsVisible="{Binding Flow.CanReorder}">
+                    <TextBlock Classes="muted" FontSize="11" Text="{DynamicResource Flow_Order_Note}" />
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <Button Classes="ghost" FontSize="11" Command="{Binding Flow.MoveEarlierCommand}"
+                              Content="{DynamicResource Flow_MoveEarlier}" />
+                      <Button Classes="ghost" FontSize="11" Command="{Binding Flow.MoveLaterCommand}"
+                              Content="{DynamicResource Flow_MoveLater}" />
+                    </StackPanel>
+                  </StackPanel>
+
+                  <Button Classes="danger" HorizontalAlignment="Left" FontSize="11"
+                          IsVisible="{Binding Flow.CanRemove}"
+                          Command="{Binding Flow.RemoveCommand}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <Path Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center"
+                            Data="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V7H6v12zM19,4h-3.5l-1,-1h-5l-1,1H5v2h14V4z"
+                            Fill="{DynamicResource Danger}" />
+                      <TextBlock Foreground="{DynamicResource Danger}" VerticalAlignment="Center"
+                                 Text="{DynamicResource Flow_Remove}" />
+                    </StackPanel>
+                  </Button>
+                </StackPanel>
+
+                <!-- Emplacements d'ajout : le choix du type se fait ici, pas sur le canevas. -->
+                <StackPanel Spacing="8" IsVisible="{Binding Flow.ShowsConditionKinds}">
+                  <TextBlock Classes="muted" FontSize="12" Text="{DynamicResource Flow_Choose_Condition}" />
+                  <ItemsControl ItemsSource="{x:Static flow:RuleFlowViewModel.ConditionKinds}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ConditionKind">
+                        <Button Classes="choice"
+                                Content="{Binding Converter={x:Static loc:Labels.Display}}"
+                                Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).Flow.AddConditionCommand}"
+                                CommandParameter="{Binding}" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+
+                <StackPanel Spacing="8" IsVisible="{Binding Flow.ShowsActionKinds}">
+                  <TextBlock Classes="muted" FontSize="12" Text="{DynamicResource Flow_Choose_Action}" />
+                  <ItemsControl ItemsSource="{x:Static flow:RuleFlowViewModel.ActionKinds}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ActionKind">
+                        <Button Classes="choice"
+                                Content="{Binding Converter={x:Static loc:Labels.Display}}"
+                                Command="{Binding $parent[ItemsControl].((vm:MainWindowViewModel)DataContext).Flow.AddActionCommand}"
+                                CommandParameter="{Binding}" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+
+              </StackPanel>
+            </ScrollViewer>
+          </Panel>
+        </Border>
+      </Grid>
+    </Grid>
+  </Panel>
+</UserControl>

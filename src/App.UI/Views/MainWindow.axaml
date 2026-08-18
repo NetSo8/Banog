@@ -1,0 +1,353 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Banog.UI.ViewModels"
+        xmlns:svc="using:Banog.UI.Services"
+        xmlns:views="using:Banog.UI.Views"
+        x:Class="Banog.UI.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{DynamicResource App_Title}"
+        Width="1240" Height="780"
+        MinWidth="1000" MinHeight="620"
+        WindowStartupLocation="CenterScreen">
+
+  <Grid ColumnDefinitions="240,*">
+
+    <!-- ================= Barre latérale =================
+         Trois espaces, l'état de la surveillance, et la sauvegarde automatique des règles.
+         Tout ce qui vaut pour l'application entière vit ici, et nulle part ailleurs. -->
+    <Border Grid.Column="0" Classes="sidebar">
+      <DockPanel Margin="12,14">
+
+        <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="8,0,0,18">
+          <TextBlock Classes="title" Text="Banog" />
+          <TextBlock Classes="muted" FontSize="11" Text="{DynamicResource App_Tagline}" />
+        </StackPanel>
+
+         <!-- Bas de la barre : ce que fait l'application, et l'état de la sauvegarde. -->
+        <StackPanel DockPanel.Dock="Bottom" Spacing="10">
+
+          <Border Classes="panel" Padding="12">
+            <StackPanel Spacing="10">
+
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Panel Width="10" VerticalAlignment="Center">
+                  <Ellipse Width="10" Height="10" Fill="{DynamicResource Success}"
+                           IsVisible="{Binding IsRunning}" />
+                  <Ellipse Width="10" Height="10" Fill="{DynamicResource TextMuted}"
+                           IsVisible="{Binding !IsRunning}" />
+                </Panel>
+                <TextBlock FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"
+                           Text="{Binding RunningLabel}" />
+              </StackPanel>
+
+              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                         Text="{Binding RunningDetail}" />
+
+              <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                      Classes.accent="{Binding !IsRunning}"
+                      Command="{Binding ToggleRunningCommand}"
+                      Content="{Binding IsRunning, Converter={x:Static svc:UiConverters.ToggleLabel}}" />
+
+              <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                      Command="{Binding RunNowCommand}" Content="{DynamicResource Side_RunNow}"
+                      ToolTip.Tip="{DynamicResource Side_RunNow_Tip}" />
+            </StackPanel>
+          </Border>
+
+          <StackPanel Spacing="6">
+            <Border Classes="badge" HorizontalAlignment="Left" IsVisible="{Binding IsDirty}">
+              <TextBlock Classes="warning" FontSize="11" Text="{DynamicResource Side_Unsaved}" />
+            </Border>
+
+            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    Classes.accent="{Binding IsDirty}" IsEnabled="{Binding IsDirty}"
+                    Command="{Binding SaveCommand}" Content="{DynamicResource Side_Save}" />
+          </StackPanel>
+
+        </StackPanel>
+
+        <!-- Navigation -->
+        <StackPanel Spacing="4" VerticalAlignment="Top">
+          <Button Classes="nav" Classes.active="{Binding IsMonitoring}"
+                  Command="{Binding ShowMonitoringCommand}"
+                  ToolTip.Tip="{DynamicResource Nav_Monitoring_Tip}">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="◉" FontSize="13" VerticalAlignment="Center" />
+              <TextBlock Text="{DynamicResource Nav_Monitoring}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+
+          <Button Classes="nav" Classes.active="{Binding IsRules}"
+                  Command="{Binding ShowRulesCommand}"
+                  ToolTip.Tip="{DynamicResource Nav_Rules_Tip}">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="✎" FontSize="13" VerticalAlignment="Center" />
+              <TextBlock Text="{DynamicResource Nav_Rules}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+
+          <Button Classes="nav" Classes.active="{Binding IsSettings}"
+                  Command="{Binding ShowSettingsCommand}"
+                  ToolTip.Tip="{DynamicResource Nav_Settings_Tip}">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <TextBlock Text="⚙" FontSize="13" VerticalAlignment="Center" />
+              <TextBlock Text="{DynamicResource Nav_Settings}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+
+      </DockPanel>
+    </Border>
+
+    <!-- ================= Contenu =================
+         Un seul espace visible à la fois, et sous eux une ligne d'état commune : le
+         retour d'une action (enregistrement, dossier déjà surveillé…) doit se voir
+         quel que soit l'espace où l'on se trouve. -->
+    <Grid Grid.Column="1" RowDefinitions="*,Auto">
+      <Panel Grid.Row="0">
+
+      <!-- ========== 1. SURVEILLANCE ========== -->
+      <Grid IsVisible="{Binding IsMonitoring}" RowDefinitions="Auto,Auto,*" Margin="20">
+
+        <StackPanel Grid.Row="0" Spacing="2" Margin="0,0,0,16">
+          <TextBlock Classes="h1" Text="{DynamicResource Mon_Title}" />
+          <TextBlock Classes="muted" Text="{DynamicResource Mon_Subtitle}" />
+        </StackPanel>
+
+        <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,16">
+          <Border Classes="tile" Margin="0,0,10,0">
+            <StackPanel>
+              <TextBlock Classes="metric good" Text="{Binding FilesHandled}" />
+              <TextBlock Classes="metricLabel" Text="{DynamicResource Mon_Metric_Files}" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="tile" Margin="0,0,10,0">
+            <StackPanel>
+              <TextBlock Classes="metric" Text="{Binding ErrorCount}"
+                         Classes.bad="{Binding ErrorCount, Converter={x:Static svc:UiConverters.IsPositive}}" />
+              <TextBlock Classes="metricLabel" Text="{DynamicResource Mon_Metric_Errors}" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="tile" Margin="0,0,10,0">
+            <StackPanel>
+              <TextBlock Classes="metric" Text="{Binding ActiveRuleCount}" />
+              <TextBlock Classes="metricLabel" Text="{DynamicResource Mon_Metric_Rules}" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="tile">
+            <StackPanel>
+              <TextBlock Classes="metric" Text="{Binding ActiveFolderCount}" />
+              <TextBlock Classes="metricLabel" Text="{DynamicResource Mon_Metric_Folders}" />
+            </StackPanel>
+          </Border>
+        </UniformGrid>
+
+        <Grid Grid.Row="2" ColumnDefinitions="*,16,400">
+
+          <!-- Les règles en place, en lecture seule : on voit ce qui tourne sans
+               risquer de le modifier d'un clic. -->
+          <Grid Grid.Column="0" RowDefinitions="Auto,*">
+            <TextBlock Grid.Row="0" Classes="section" Text="{DynamicResource Mon_RulesHeader}" />
+
+            <Border Grid.Row="1" Classes="panel">
+              <Panel>
+                <StackPanel IsVisible="{Binding !HasRules}" VerticalAlignment="Center" Spacing="10">
+                  <TextBlock Classes="empty" Margin="20,0" Text="{DynamicResource Mon_Rules_Empty}" />
+                  <Button Classes="accent" HorizontalAlignment="Center"
+                          Command="{Binding AddRuleCommand}" Content="{DynamicResource Mon_CreateFirstRule}" />
+                </StackPanel>
+
+                <ScrollViewer Padding="10" IsVisible="{Binding HasRules}">
+                  <ItemsControl ItemsSource="{Binding Rules}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:RuleViewModel">
+                        <Border Classes="card">
+                          <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto">
+
+                            <Panel Grid.Row="0" Grid.Column="0" Width="8" Margin="0,6,10,0"
+                                   VerticalAlignment="Top">
+                              <Ellipse Width="8" Height="8" Fill="{DynamicResource Success}"
+                                       IsVisible="{Binding Enabled}" />
+                              <Ellipse Width="8" Height="8" Fill="{DynamicResource TextMuted}"
+                                       IsVisible="{Binding !Enabled}" />
+                            </Panel>
+
+                            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="3">
+                              <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                         TextTrimming="CharacterEllipsis" />
+                              <TextBlock Classes="muted" FontSize="11" Text="{Binding Summary}"
+                                         TextWrapping="Wrap" MaxLines="3"
+                                         TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+
+                            <Button Grid.Row="0" Grid.Column="2" Classes="ghost" Content="{DynamicResource Mon_Edit}"
+                                    VerticalAlignment="Top"
+                                    Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).EditRuleCommand}"
+                                    CommandParameter="{Binding}" />
+
+                            <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                                        Orientation="Horizontal" Spacing="6" Margin="0,8,0,0">
+                              <TextBlock Classes="muted" FontSize="11" Text="{Binding StateLabel}" />
+                              <TextBlock Classes="muted" FontSize="11" Text="·" />
+                              <TextBlock Classes="muted" FontSize="11" Text="{Binding TriggerLabel}" />
+                            </StackPanel>
+
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </Panel>
+            </Border>
+          </Grid>
+
+          <!-- Journal -->
+          <Grid Grid.Column="2" RowDefinitions="Auto,*">
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+              <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                <TextBlock Classes="section" Text="{DynamicResource Mon_ActivityHeader}" />
+                <TextBlock Classes="muted" FontSize="11" Margin="0,0,0,6"
+                           IsVisible="{Binding HasActivity}"
+                           Text="{Binding LastEventSummary}" />
+              </StackPanel>
+              <Button Grid.Column="1" Classes="ghost" Content="{DynamicResource Mon_Clear}" Margin="0,0,0,4"
+                      IsVisible="{Binding HasActivity}"
+                      Command="{Binding ClearActivityCommand}"
+                      ToolTip.Tip="{DynamicResource Mon_Clear_Tip}" />
+            </Grid>
+
+            <Border Grid.Row="1" Classes="panel">
+              <Panel>
+                <TextBlock Classes="empty" IsVisible="{Binding !HasActivity}" Text="{DynamicResource Mon_Activity_Empty}" />
+
+                <ScrollViewer Padding="10" IsVisible="{Binding HasActivity}">
+                  <ItemsControl ItemsSource="{Binding Activity}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="svc:ActivityEntry">
+                        <Grid ColumnDefinitions="56,*" Margin="0,0,0,6">
+                          <TextBlock Grid.Column="0" Classes="mono" Text="{Binding Time}"
+                                     VerticalAlignment="Top" />
+                          <TextBlock Grid.Column="1" Classes="muted" Classes.error="{Binding IsError}"
+                                     Text="{Binding Message}" TextWrapping="Wrap" FontSize="11" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </Panel>
+            </Border>
+          </Grid>
+
+        </Grid>
+      </Grid>
+
+      <!-- ========== 2. RÈGLES ==========
+           La page entière vit dans RulesView : elle porte le flux, son canevas et
+           son inspecteur, ce qui garde cette fenêtre lisible. -->
+      <views:RulesView IsVisible="{Binding IsRules}" />
+
+      <!-- ========== 3. PARAMÈTRES ========== -->
+      <Grid IsVisible="{Binding IsSettings}" RowDefinitions="Auto,*" Margin="20">
+
+        <StackPanel Grid.Row="0" Spacing="2" Margin="0,0,0,16">
+          <TextBlock Classes="h1" Text="{DynamicResource Set_Title}" />
+          <TextBlock Classes="muted" Text="{DynamicResource Set_Subtitle}" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1">
+          <StackPanel Spacing="14" MaxWidth="620" HorizontalAlignment="Left">
+
+            <Border Classes="panel" Padding="16">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="section" Text="{DynamicResource Set_Appearance}" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Classes="glue" Text="{DynamicResource Set_Theme}" />
+                  <ComboBox ItemsSource="{x:Static svc:ThemeOption.All}"
+                            SelectedItem="{Binding SelectedTheme}" MinWidth="180">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="svc:ThemeOption">
+                        <TextBlock Text="{Binding Label}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                           Text="{DynamicResource Set_Theme_Note}" />
+              </StackPanel>
+            </Border>
+
+            <!-- La langue se règle comme le thème : appliquée tout de suite, sans
+                 redémarrage et sans passer par « Enregistrer ». -->
+            <Border Classes="panel" Padding="16">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="section" Text="{DynamicResource Set_Language_Header}" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Classes="glue" Text="{DynamicResource Set_Language}" />
+                  <ComboBox ItemsSource="{x:Static svc:LanguageOption.All}"
+                            SelectedItem="{Binding SelectedLanguage}" MinWidth="180">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="svc:LanguageOption">
+                        <TextBlock Text="{Binding Label}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                           Text="{DynamicResource Set_Language_Note}" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="panel" Padding="16">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="section" Text="{DynamicResource Set_Detection}" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Classes="glue" Text="{DynamicResource Set_Wait}" />
+                  <TextBox Text="{Binding DebounceMilliseconds}" Width="90" />
+                  <TextBlock Classes="glue" Text="{DynamicResource Set_WaitSuffix}" />
+                </StackPanel>
+                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                           Text="{DynamicResource Set_Detection_Note}" />
+              </StackPanel>
+            </Border>
+
+            <!-- Le démarrage en arrière-plan est imposé : il n'y a donc aucun choix à
+                 enregistrer ici. L'icône de la zone de notification est l'autre moitié
+                 du contrat — fermer la fenêtre ne quitte plus. -->
+            <Border Classes="panel" Padding="16">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="section" Text="{DynamicResource Set_Startup}" />
+                <TextBlock Text="{DynamicResource Set_BackgroundStartup}" />
+                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                           Text="{DynamicResource Set_BackgroundStartup_Note}" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="panel" Padding="16">
+              <StackPanel Spacing="8">
+                <TextBlock Classes="section" Text="{DynamicResource Set_ConfigFile}" />
+                <TextBlock Classes="mono" TextWrapping="Wrap" Text="{Binding ConfigurationPath}" />
+                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                           Text="{DynamicResource Set_ConfigFile_Note}" />
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+
+      </Panel>
+
+      <!-- Ligne d'état commune aux trois espaces. -->
+      <Border Grid.Row="1" BorderBrush="{DynamicResource Stroke}" BorderThickness="0,1,0,0"
+              Padding="20,8">
+        <TextBlock Classes="muted" FontSize="11" Text="{Binding StatusMessage}"
+                   TextTrimming="CharacterEllipsis" />
+      </Border>
+
+    </Grid>
+  </Grid>
+</Window>

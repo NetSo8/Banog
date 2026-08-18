@@ -1,0 +1,27 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+
+    <!-- Toute la solution vise win-x64 en v1. -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+
+    <!-- Analyseurs AOT/trimming actifs partout dès le départ : on veut voir les
+         incompatibilités de réflexion au moment où le code est écrit, pas au publish. -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+
+    <Product>Banog</Product>
+    <Company>Banog</Company>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+</Project>
