@@ -41,9 +41,27 @@ public sealed class FolderWatchService : IDisposable
     /// <summary>Aligne les watchers actifs sur la configuration : ajoute, retire, rien d'autre.</summary>
     public void Sync(IEnumerable<WatchedFolder> folders)
     {
-        var desired = folders
-            .Where(f => f.Enabled && !string.IsNullOrWhiteSpace(f.Path))
-            .ToDictionary(f => Path.GetFullPath(f.Path), f => f.IncludeSubfolders, StringComparer.OrdinalIgnoreCase);
+        var desired = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var folder in folders)
+        {
+            if (!folder.Enabled || string.IsNullOrWhiteSpace(folder.Path)) continue;
+
+            // Un chemin non normalisable ne doit pas faire échouer la surveillance
+            // d'ensemble : on ignore ce dossier, comme le fait le contrôleur.
+            string root;
+            try
+            {
+                root = Path.GetFullPath(folder.Path);
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                _log.Warn(Banog.Core.Localization.CoreTexts.FolderNotFound(folder.Path));
+                continue;
+            }
+
+            desired[root] = folder.IncludeSubfolders;
+        }
 
         lock (_gate)
         {

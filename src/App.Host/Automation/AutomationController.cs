@@ -83,6 +83,18 @@ public sealed class AutomationController : IAutomationController, IDisposable
         {
             if (string.IsNullOrWhiteSpace(folder.Path)) continue;
 
+            // Un chemin non normalisable (NUL embarqué, longueur excessive) ne doit pas
+            // empêcher l'application de démarrer : le dossier est ignoré, jamais fatal.
+            string root;
+            try
+            {
+                root = Path.GetFullPath(folder.Path);
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                continue;
+            }
+
             // Une liste de règles vide côté dossier signifie « toutes ».
             Rule[] applicable;
             if (folder.RuleIds.Count == 0)
@@ -95,7 +107,7 @@ public sealed class AutomationController : IAutomationController, IDisposable
                 applicable = Array.FindAll(sorted, r => wanted.Contains(r.Id));
             }
 
-            index[Path.GetFullPath(folder.Path)] = applicable;
+            index[root] = applicable;
         }
 
         lock (_gate)

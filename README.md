@@ -1,42 +1,42 @@
-# Banog — automate de dossiers pour Windows
+# Banog — folder automation for Windows
 
-Surveillance de dossiers et application automatique de règles (tri, renommage, déplacement,
-nettoyage) dès qu'un fichier apparaît ou change. Exécutable natif autonome, aucun runtime à
-installer, aucun compte, aucune télémétrie.
+Watches folders and applies rules automatically (sorting, renaming, moving, cleaning) as
+soon as a file appears or changes. A self-contained native executable: no runtime to
+install, no account, no telemetry.
 
-> **Version bêta :** Banog est encore en développement. L'application et son format de
-> configuration sont susceptibles de changer fortement avant une version stable. Pensez à
-> conserver une copie de vos règles si vous testez une nouvelle version.
+> **Beta version:** Banog is still under development. The application and its configuration
+> format may change significantly before a stable release. Keep a copy of your rules if you
+> try a new version.
 
-> Nom de travail. Voir « Nom » plus bas.
+> Working title. See "Name" below.
 
 ## Stack
 
 | | |
 |---|---|
-| UI | Avalonia 11.3.18, MVVM, XAML compilé, bindings compilés |
+| UI | Avalonia 11.3.18, MVVM, compiled XAML, compiled bindings |
 | Runtime | .NET 10, Native AOT |
-| Cible | `win-x64` uniquement (v1) |
-| Déploiement | self-contained, exécutable natif |
+| Target | `win-x64` only (v1) |
+| Deployment | self-contained, native executable |
 
 ## Structure
 
 ```
 src/
-  Banog.csproj  projet applicatif unique
-  App.Core/     moteur de règles, modèles sérialisables JSON, logique métier
-  App.Watcher/  surveillance native (ReadDirectoryChangesW), debounce, stabilisation
-  App.UI/       vues, viewmodels et styles Avalonia
-  App.Host/     point d'entrée, composition et services Windows
+  Banog.csproj  single application project
+  App.Core/     rules engine, JSON-serializable models, business logic
+  App.Watcher/  native watching (ReadDirectoryChangesW), debounce, stabilization
+  App.UI/       Avalonia views, viewmodels and styles
+  App.Host/     entry point, composition and Windows services
 tests/
-  App.Core.Tests  82 tests (conditions, actions, tokens, sérialisation, sécurité)
+  App.Core.Tests  84 tests (conditions, actions, tokens, serialization, security)
 ```
 
-Les sous-dossiers gardent des repères de maintenance et des namespaces clairs, mais ils sont
-tous compilés par le même projet `Banog.csproj`. Il n'y a qu'un exécutable applicatif à
-construire ; les tests restent séparés et s'exécutent entièrement en mémoire.
+The subfolders keep maintenance markers and clear namespaces, but they are all compiled by
+the same `Banog.csproj`. There is a single application executable to build; the tests stay
+separate and run entirely in memory.
 
-## Compiler et lancer
+## Build and run
 
 ```bash
 dotnet test
@@ -46,35 +46,63 @@ dotnet test
 dotnet run --project src/Banog.csproj
 ```
 
-## Publier l'exécutable natif
+## Publish the native executable
 
-L'édition de liens Native AOT a besoin de `link.exe` : installez la charge de travail
-**Développement Desktop en C++** de Visual Studio (MSVC x64 + Windows SDK), puis :
+Native AOT linking needs `link.exe`: install the **Desktop development with C++**
+workload of Visual Studio (MSVC x64 + Windows SDK), then:
 
 ```bash
 publish.cmd
 ```
 
-Le script initialise l'environnement MSVC puis appelle `dotnet publish`. Sortie dans `publish/`.
+The script initializes the MSVC environment and then calls `dotnet publish`. Output goes
+to `publish/`.
 
-### Note sur le « single-file »
+## Releases
 
-Native AOT produit `Banog.exe` (~23 Mo) qui embarque tout le code managé et le runtime : rien
-à installer côté utilisateur, c'est l'objectif atteint. Avalonia charge en revanche son moteur
-de rendu par bibliothèques natives, non fusionnables dans l'image AOT :
+Downloadable releases are built entirely by GitHub Actions — no local build needed. The
+[release workflow](.github/workflows/release.yml) runs on the `windows-latest` runner
+(which already carries the MSVC C++ tools required by Native AOT and Chocolatey), then:
+
+1. runs the test suite;
+2. publishes the Native AOT executable;
+3. packages an **Inno Setup installer** ([`installer/installer.iss`](installer/installer.iss)) and a **portable ZIP**;
+4. writes a `SHA256SUMS.txt` checksum file;
+5. creates a GitHub release with all three attached.
+
+Pushing a tag triggers it:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The version is taken from the tag (the leading `v` is stripped). The workflow can also be
+run manually from the **Actions** tab with an explicit version (e.g. `0.1.0`); a tag is
+then created from it, `v` prefix included.
+
+Installation is per-user (no administrator rights): the app installs to
+`%LOCALAPPDATA%\Banog`, and its configuration stays in `%APPDATA%\Banog` — uninstalling
+removes the program but not your rules file.
+
+### A note on "single-file"
+
+Native AOT produces `Banog.exe` (~23 MB) that embeds all the managed code and the runtime:
+nothing to install on the user side, which is the goal. Avalonia, however, loads its
+rendering engine from native libraries that cannot be merged into the AOT image:
 
 ```
 Banog.exe  libSkiaSharp.dll  libHarfBuzzSharp.dll  av_libglesv2.dll
 ```
 
-Un « un seul fichier » littéral demanderait d'embarquer ces DLL en ressources et de les
-extraire au démarrage — ce qui réintroduit une extraction disque au lancement, exactement le
-coût que l'AOT cherchait à supprimer. Quatre fichiers dans un même dossier restent compatibles
-avec une distribution en téléchargement direct (ZIP, ou installeur à un clic).
+A literal "one file" would require embedding these DLLs as resources and extracting them
+at startup — which reintroduces a disk extraction at launch, exactly the cost AOT was meant
+to remove. Four files in one folder remain compatible with direct-download distribution
+(ZIP, or a one-click installer).
 
-## Format de règles
+## Rules file format
 
-Fichier : `%APPDATA%\Banog\rules.json`, écrit de façon atomique.
+File: `%APPDATA%\Banog\rules.json`, written atomically.
 
 ```json
 {
@@ -82,19 +110,19 @@ Fichier : `%APPDATA%\Banog\rules.json`, écrit de façon atomique.
   "debounceMilliseconds": 750,
   "theme": "System",
   "folders": [
-    { "id": "…", "path": "C:\\Users\\moi\\Downloads", "includeSubfolders": false, "enabled": true }
+    { "id": "…", "path": "C:\\Users\\me\\Downloads", "includeSubfolders": false, "enabled": true }
   ],
   "rules": [
     {
-      "name": "Factures",
+      "name": "Invoices",
       "match": "All",
       "conditions": [
         { "type": "extension", "match": "IsOneOf", "extensions": ["pdf"] },
-        { "type": "name", "mode": "Contains", "value": "facture" }
+        { "type": "name", "mode": "Contains", "value": "invoice" }
       ],
       "actions": [
         { "type": "rename", "template": "{created:yyyy-MM-dd}_{name}.{ext}" },
-        { "type": "move", "destination": "D:\\Compta\\{created:yyyy}" }
+        { "type": "move", "destination": "D:\\Accounting\\{created:yyyy}" }
       ]
     }
   ]
@@ -103,277 +131,270 @@ Fichier : `%APPDATA%\Banog\rules.json`, écrit de façon atomique.
 
 ### Conditions v1
 
-`extension` · `name` (contient / commence par / finit par / égal / regex) · `date` (création ou
-modification, plus ancien que / plus récent que / avant / après) · `size` · `sourceFolder` ·
-`group` (imbrication ET/OU).
+`extension` · `name` (contains / starts with / ends with / equals / regex) · `date`
+(creation or modification, older than / newer than / before / after) · `size` ·
+`sourceFolder` · `group` (nested AND/OR).
 
-Toute condition accepte `"negate": true`.
+Every condition accepts `"negate": true`.
 
 ### Actions v1
 
-`move` · `copy` · `rename` · `recycle` (corbeille) · `delete` · `runCommand`.
+`move` · `copy` · `rename` · `recycle` (recycle bin) · `delete` · `runCommand`.
 
 ### Tokens
 
-Utilisables dans les gabarits de renommage et les chemins de destination.
+Usable in rename templates and destination paths.
 
-| Token | Alias français | Résultat |
+| Token | French alias | Result |
 |---|---|---|
-| `{name}` | `{nom}` | nom sans extension |
-| `{filename}` | `{fichier}` | nom avec extension |
-| `{ext}` | `{extension}` | extension sans le point |
-| `{folder}` | `{dossier}` | nom du dossier parent |
-| `{path}` | `{chemin}` | chemin complet |
-| `{counter:000}` | `{compteur:000}` | compteur de désambiguïsation |
-| `{created:F}` | `{date:F}`, `{creation:F}` | date de création, format .NET `F` (défaut `yyyy-MM-dd`), heure locale |
-| `{modified:F}` | `{modification:F}` | date de dernière modification |
-| `{now:F}` | `{aujourdhui:F}` | date courante |
+| `{name}` | `{nom}` | name without extension |
+| `{filename}` | `{fichier}` | name with extension |
+| `{ext}` | `{extension}` | extension without the dot |
+| `{folder}` | `{dossier}` | name of the parent folder |
+| `{path}` | `{chemin}` | full path |
+| `{counter:000}` | `{compteur:000}` | disambiguation counter |
+| `{created:F}` | `{date:F}`, `{creation:F}` | creation date, .NET format `F` (default `yyyy-MM-dd`), local time |
+| `{modified:F}` | `{modification:F}` | last modification date |
+| `{now:F}` | `{aujourdhui:F}` | current date |
 
-Les deux graphies sont valides et le resteront. Une interface en français qui impose d'écrire
-`{name}` n'est simple qu'en apparence — mais les fichiers de règles déjà écrits ne doivent pas
-cesser de fonctionner pour autant. La casse est ignorée. `{{` et `}}` produisent une accolade
-littérale.
+Both spellings are valid and will remain so. A French UI that forced writing `{name}` would
+only be superficially simple — but existing rule files must keep working all the same.
+Matching is case-insensitive. `{{` and `}}` produce a literal brace.
 
-## Apparence
+## Appearance
 
-Trois modes, sélectionnables dans **Paramètres → Apparence** : **Windows** (défaut), **clair**,
-**sombre**. Le choix est persisté dans `theme` et s'applique immédiatement, sans redémarrage.
+Three modes, selectable in **Settings → Appearance**: **Windows** (default), **light**,
+**dark**. The choice is persisted in `theme` and applied immediately, without restarting.
 
-En mode Windows, l'application ne lit ni ne surveille le registre : elle laisse son variant sur
-`ThemeVariant.Default`, et Avalonia se repeint tout seul quand l'utilisateur bascule le réglage
-système, application ouverte.
+In Windows mode the application neither reads nor watches the registry: it leaves its
+variant on `ThemeVariant.Default`, and Avalonia repaints itself when the user switches the
+system setting while the app is open.
 
-Une seule palette, deux valeurs par clé
-([`Themes/Palette.axaml`](src/App.UI/Themes/Palette.axaml)) ; les styles
-([`Themes/Theme.axaml`](src/App.UI/Themes/Theme.axaml)) ne connaissent que les clés et sont
-écrits une seule fois. Toutes les couleurs passent par `DynamicResource` — avec
-`StaticResource`, la bascule à chaud ne repeindrait rien.
+A single palette, two values per key
+([`Themes/Palette.axaml`](src/App.UI/Themes/Palette.axaml)); the styles
+([`Themes/Theme.axaml`](src/App.UI/Themes/Theme.axaml)) only know the keys and are written
+once. Every color goes through `DynamicResource` — with `StaticResource`, the hot switch
+would repaint nothing.
 
-L'accent est assombri en clair (`#0B72AE` au lieu de `#4CC2FF`) : le bleu du thème sombre passe
-sous le seuil de contraste sur fond blanc.
+The accent is darkened in light mode (`#0B72AE` instead of `#4CC2FF`): the dark-theme blue
+falls below the contrast threshold on a white background.
 
-## Arrière-plan
+## Background
 
-Banog surveille sans fenêtre. Fermer la fenêtre ne quitte pas : la surveillance continue
-sous l'icône de la zone de notification, qui ouvre la fenêtre, met la surveillance en
-marche ou en pause, et quitte réellement. Le plateau est le seul visage de l'application
-quand elle tourne en arrière-plan — aucune vue ni viewmodel n'est construit tant que la
-fenêtre n'a pas été demandée.
+Banog watches without a window. Closing the window does not quit: watching continues
+under the notification-area icon, which opens the window, starts or pauses watching, and
+really quits. The tray is the only face of the application when it runs in the background —
+no view or viewmodel is constructed until the window is requested.
 
-Une seule instance tourne à la fois : deux processus qui surveillent le même dossier
-traiteraient chaque fichier deux fois. Un second lancement sans option demande donc à la
-première instance de rouvrir sa fenêtre, puis s'efface.
+Only one instance runs at a time: two processes watching the same folder would process
+every file twice. A second launch without options therefore asks the first instance to
+reopen its window, then exits.
 
-`Banog.exe --background` (alias `--daemon`) démarre sans fenêtre et met la surveillance en
-marche immédiatement. C'est ainsi que la clé de démarrage lance Banog.
+`Banog.exe --background` (alias `--daemon`) starts without a window and starts watching
+immediately. This is how the startup entry launches Banog.
 
-Le démarrage avec Windows est obligatoire : la clé `Run` de l'utilisateur pointe vers
-l'exécutable courant avec `--background`. Elle est réalignée à chaque lancement sur
-l'exécutable qui tourne, ce qui suit un déplacement d'installation.
+Starting with Windows is mandatory: the user `Run` key points to the current executable
+with `--background`. It is realigned at every launch on the running executable, which
+follows a moved installation.
 
-L'icône du plateau n'est pas embarquée : un carré bleu portant un dossier blanc, dessiné en
-pixels au démarrage.
+The tray icon is not embedded: a blue square bearing a white folder, drawn pixel by pixel
+at startup.
 
-## Parti pris d'interface
+## Interface design decisions
 
-L'outil vise des gens qui croulent sous leurs téléchargements, pas des développeurs. Quatre
-règles guident l'interface.
+The tool targets people drowning in their downloads, not developers. Four rules guide the
+interface.
 
-**Un espace, une intention.** Une barre latérale sépare trois espaces, et un seul est visible à
-la fois : **Surveillance** (ce qui tourne, les règles en place, ce qui s'est passé),
-**Règles** (les dossiers surveillés et l'écriture des règles), **Paramètres** (apparence,
-détection, emplacement du fichier). Regarder n'est pas modifier : la surveillance n'affiche
-aucun champ éditable, seulement un bouton « Modifier » qui bascule vers l'espace d'édition sur
-la bonne règle. Ce qui vaut pour l'application entière — l'état marche/pause et « Ranger
-maintenant » — vit dans la barre latérale, et nulle part ailleurs. Les règles et les flowcharts
-sont sauvegardés automatiquement après une courte pause de saisie, même lorsqu'ils sont
-incomplets ; le bouton « Enregistrer maintenant » reste disponible pour forcer l'écriture.
+**One space, one intent.** A sidebar separates three spaces, and only one is visible at a
+time: **Monitoring** (what is running, the rules in place, what happened), **Rules** (the
+watched folders and rule authoring), **Settings** (appearance, detection, file location).
+Looking is not editing: monitoring shows no editable field, only an "Edit" button that
+switches to the editing space on the right rule. What applies to the whole application —
+the running/paused state and "Organize now" — lives in the sidebar and nowhere else. Rules
+and flowcharts are saved automatically after a short typing pause, even when incomplete;
+the "Save now" button remains available to force a write.
 
-**Aucun vocabulaire d'implémentation à l'écran.** Les valeurs d'énumération du modèle
-(`IsOneOf`, `BaseName`, `Any`, `GreaterThan`) restent stables dans le JSON, mais ne sont
-jamais affichées telles quelles : un convertisseur unique
-([Labels.cs](src/App.UI/Localization/Labels.cs)) les traduit, branché sur tous les sélecteurs
-par une seule classe de style.
+**No implementation vocabulary on screen.** Model enum values (`IsOneOf`, `BaseName`,
+`Any`, `GreaterThan`) stay stable in the JSON, but are never displayed as-is: a single
+converter ([Labels.cs](src/App.UI/Localization/Labels.cs)) translates them, wired to all
+selectors by a single style class.
 
-**Une règle se lit comme une phrase**, pas comme un formulaire. « SI *toutes* de ces
-conditions sont remplies : le nom — contient — facture ». Chaque éditeur porte ses propres
-mots de liaison ; la case « inverser » est devenue « sauf si ». La liste des règles affiche un
-résumé généré (« le type est pdf et le nom contient « facture » → déplacer vers D:\Compta »),
-pour qu'on sache ce que fait une règle sans l'ouvrir.
+**A rule reads like a sentence, not a form.** "IF *all* of these conditions are met: the
+name — contains — invoice". Each editor carries its own linking words; the "invert" check
+box became "unless". The rule list shows a generated summary ("the type is pdf and the
+name contains « invoice » → move to D:\Accounting"), so you know what a rule does without
+opening it.
 
-**Rien ne s'exécute sans qu'on ait pu le voir avant.** Le bouton « Essayer sur un fichier… »
-prend un fichier réel, dit si la règle s'appliquerait et décrit le résultat — nom final,
-dossier d'arrivée — sans toucher au disque. C'était la lacune la plus coûteuse : écrire une
-règle de suppression demandait jusqu'ici de la tester sur de vrais fichiers. Une action
-irréversible (suppression sans corbeille) encadre en outre sa carte de rouge et l'annonce.
+**Nothing runs that you could not see beforehand.** The "Try on a file…" button takes a
+real file, says whether the rule would apply and describes the result — final name,
+destination folder — without touching the disk. This was the most costly gap: writing a
+delete rule used to require testing it on real files. An irreversible action (delete
+without recycle bin) additionally frames its card in red and announces it.
 
-Le reste tient à des détails qui évitent la page blanche : chaque liste vide explique l'action
-suivante au lieu d'afficher un cadre vide, les colonnes sont numérotées (dossiers, puis
-règles), les chemins se choisissent avec « Parcourir… » plutôt qu'en les tapant, et la barre
-d'état — commune aux trois espaces — dit quoi faire tant que rien n'est configuré.
+The rest comes down to details that avoid the blank page: every empty list explains the
+next action instead of showing an empty frame, the columns are numbered (folders, then
+rules), paths are chosen with "Browse…" rather than typed, and the status bar — shared by
+the three spaces — says what to do while nothing is configured.
 
-L'espace surveillance chiffre l'exercice en cours : fichiers rangés, erreurs, règles actives,
-dossiers surveillés, et un compteur par règle. Une règle qui n'a jamais rien traité est
-presque toujours une erreur d'écriture ; sans ce compteur, rien ne la distingue d'une règle qui
-travaille. Ces compteurs valent pour la session et ne sont pas persistés. Le journal affiche
-une ligne par règle déclenchée, actions enchaînées dans le message (« facture.pdf — Factures :
-déplacé vers D:\Compta, puis renommé en 2026-08-05_facture.pdf »), plutôt qu'une ligne par
-action.
+The monitoring space quantifies the ongoing exercise: files organized, errors, active
+rules, watched folders, and a per-rule counter. A rule that never processed anything is
+almost always a writing error; without that counter, nothing distinguishes it from a
+working rule. These counters last for the session and are not persisted. The log shows one
+line per triggered rule, with the actions chained in the message (« invoice.pdf —
+Invoices: moved to D:\Accounting, then renamed to 2026-08-05_invoice.pdf »), rather than
+one line per action.
 
-## Modèle de menace
+## Threat model
 
-La frontière de confiance passe entre deux choses qu'il serait facile de confondre :
+The trust boundary lies between two things that would be easy to confuse:
 
-- **le gabarit d'une règle** est écrit par l'utilisateur — donnée de confiance ;
-- **le nom du fichier traité** ne l'est pas. Il vient de ce que quelqu'un a déposé dans le
-  dossier surveillé : un téléchargement, une pièce jointe, un partage réseau.
+- **a rule's template** is written by the user — trusted data;
+- **the name of the processed file** is not. It comes from whatever someone dropped in
+  the watched folder: a download, an email attachment, a network share.
 
-Or les tokens injectent la seconde dans la première. Tout ce qui suit protège cette jointure.
-Les tests correspondants sont dans [SecurityTests.cs](tests/App.Core.Tests/SecurityTests.cs).
+Yet tokens inject the second into the first. Everything below protects that junction. The
+corresponding tests live in
+[SecurityTests.cs](tests/App.Core.Tests/SecurityTests.cs).
 
-**Injection d'arguments de commande.** `&`, `^`, `|` et les espaces sont des caractères
-valides dans un nom de fichier Windows. Concaténés dans une ligne de commande, ils enchaînent
-une seconde commande. Le gabarit d'arguments est donc découpé **avant** l'expansion des
-tokens, et les arguments sont remis au processus un par un via `ArgumentList` — jamais
-concaténés. Une valeur de token ne peut donc pas créer un argument supplémentaire, quel que
-soit son contenu. `UseShellExecute` reste à `false` : ni associations de fichiers, ni verbes
-shell.
+**Command-line argument injection.** `&`, `^`, `|` and spaces are valid characters in a
+Windows file name. Concatenated into a command line, they would chain a second command.
+The arguments template is therefore split **before** token expansion, and the arguments
+are handed to the process one by one via `ArgumentList` — never concatenated. A token
+value cannot create an extra argument, whatever its content. `UseShellExecute` stays
+`false`: no file associations, no shell verbs.
 
-> Pointer `Executable` sur `cmd.exe` ou `powershell.exe` réintroduit un interpréteur qui
-> refait sa propre analyse de `/c`. C'est un choix explicite de l'utilisateur, pas un défaut
-> du moteur — mais il annule la protection ci-dessus.
+> Pointing `Executable` at `cmd.exe` or `powershell.exe` reintroduces an interpreter that
+> does its own parsing of `/c`. That is an explicit user choice, not a default of the
+> engine — but it voids the protection above.
 
-**Évasion de chemin.** Les valeurs de tokens sont contraintes à un segment unique dans tout
-contexte de chemin (`TokenScope.Path` / `FileName`) : séparateurs, deux-points et jokers sont
-neutralisés, `.` et `..` remplacés. Sans cela `{path}` dans une destination produisait un
-chemin enraciné, et `Path.Join` aurait purement et simplement écrasé le dossier cible. Les
-séparateurs écrits littéralement dans le gabarit, eux, restent intacts. Une destination qui se
-développe en chemin relatif est refusée : elle dépendrait du répertoire courant du processus.
+**Path escape.** Token values are constrained to a single segment in any path context
+(`TokenScope.Path` / `FileName`): separators, colons and wildcards are neutralized, `.`
+and `..` replaced. Without this, `{path}` in a destination produced a rooted path, and
+`Path.Join` would simply have overwritten the target folder. Separators written literally
+in the template, on the other hand, stay intact. A destination that expands to a relative
+path is rejected: it would depend on the process's current directory.
 
-**Jonctions et liens symboliques.** La réanalyse d'un dossier exclut les points d'analyse
-(`FileAttributes.ReparsePoint`). Sans ça, une jonction déposée dans un dossier surveillé
-faisait sortir le parcours de l'arborescence — jusqu'à `C:\Windows` — et un lien circulaire le
-faisait tourner indéfiniment.
+**Junctions and symbolic links.** Rescans of a folder exclude reparse points
+(`FileAttributes.ReparsePoint`). Without this, a junction dropped into a watched folder
+would take the traversal out of the tree — as far as `C:\Windows` — and a circular link
+would make it spin forever.
 
-**Déni de service par expression régulière.** Les motifs sont évalués avec un délai maximal de
-250 ms, et un motif invalide ne matche pas au lieu de casser la règle. Un nom de fichier
-construit pour faire exploser un motif du type `^(a+)+$` ne bloque donc pas le moteur.
+**Regular-expression denial of service.** Patterns are evaluated with a maximum timeout
+of 250 ms, and an invalid pattern does not match instead of breaking the rule. A file
+name built to blow up a pattern like `^(a+)+$` therefore cannot stall the engine.
 
-**Bornes mémoire.** La file de stabilisation est plafonnée (100 000 entrées) et le canal de
-traitement est borné (50 000). Un dossier qui déverse des millions d'entrées fait ralentir le
-producteur au lieu de faire gonfler le processus sans limite.
+**Memory bounds.** The stabilization queue is capped (100,000 entries) and the processing
+channel is bounded (50,000). A folder dumping millions of entries slows the producer down
+instead of making the process grow without limit.
 
-### Risques assumés, non corrigés
+### Accepted risks, not fixed
 
-- **Le fichier de règles vaut exécution de code.** Une règle `runCommand` s'exécute avec les
-  droits de l'utilisateur. `%APPDATA%` est protégé par les ACL par défaut ; quiconque peut y
-  écrire peut déjà faire bien pire. Aucune signature de configuration n'est prévue.
-- **L'essai porte sur un fichier à la fois.** « Essayer sur un fichier… » couvre le cas d'une
-  règle qu'on écrit, mais il n'existe pas d'aperçu global du type « voici les 300 fichiers que
-  cette règle déplacerait si je l'activais ».
-- **TOCTOU sur la destination.** Entre le test d'existence et le déplacement, un tiers peut
-  créer la cible. En politique `Rename` ou `Skip` l'opération échoue proprement ; en
-  `Overwrite`, elle écrase — ce qui est le comportement demandé.
+- **The rules file is code execution.** A `runCommand` rule runs with the user's rights.
+  `%APPDATA%` is protected by the default ACLs; anyone who can write there can already do
+  far worse. No configuration signing is planned.
+- **The dry run covers one file at a time.** "Try on a file…" covers a rule you are
+  writing, but there is no global preview of the "here are the 300 files this rule would
+  move if I enabled it" kind.
+- **TOCTOU on the destination.** Between the existence check and the move, a third party
+  can create the target. Under `Rename` or `Skip` policy the operation fails cleanly; under
+  `Overwrite` it overwrites — which is the requested behavior.
 
-## Performances
+## Performance
 
-Ce que le moteur traite par fichier n'est pas censé être mesurable à côté des I/O disque du
-watcher. L'objectif n'était donc pas la vitesse brute mais **la pression sur le GC** : un
-utilitaire résident qui digère un dossier de 100 000 fichiers ne doit pas déclencher des
-dizaines de collectes.
+What the engine does per file is not meant to be measurable next to the watcher's disk
+I/O. The goal was therefore not raw speed but **GC pressure**: a resident utility chewing
+through a 100,000-file folder must not trigger dozens of collections.
 
-Mesures sur 200 000 fichiers, une règle, quatre conditions
-(`GC.GetAllocatedBytesForCurrentThread`, Release) :
+Measurements on 200,000 files, one rule, four conditions
+(`GC.GetAllocatedBytesForCurrentThread`, Release):
 
-| | avant | après |
+| | before | after |
 |---|---|---|
-| Test d'extension seul | 96 o/fichier | **0 o** |
-| Extraction des composants du chemin | 213 o/fichier | **80 o** (l'objet `FileContext` lui-même) |
-| Expansion de tokens | 868 o/fichier, 13 GC gen0 | **96 o, 1 GC gen0** |
+| Extension test alone | 96 B/file | **0 B** |
+| Path component extraction | 213 B/file | **80 B** (the `FileContext` object itself) |
+| Token expansion | 868 B/file, 13 gen0 GCs | **96 B, 1 gen0 GC** |
 
-Comment :
+How:
 
-- **`FileContext` découpe le chemin une fois** à la construction et expose nom, base,
-  extension et dossier en `ReadOnlySpan<char>`. Les exposer en `string` allouait à *chaque
-  lecture de propriété*, donc à chaque condition sur chaque fichier — et `Extension` ajoutait
-  un `ToLowerInvariant`.
-- **`ValueStringBuilder`** compose les noms et chemins dans un `stackalloc` de 320 caractères,
-  avec repli sur `ArrayPool` au débordement. Le cas courant n'alloue que la chaîne finale.
-  Les nombres et dates sont écrits par `TryFormat` directement dans le tampon.
-- **Aiguillage des tokens par `switch` sur span** contre littéraux : le compilateur en fait un
-  saut par longueur puis par caractère. La chaîne de comparaisons insensibles à la casse ne
-  sert plus qu'aux graphies non canoniques.
-- **Un `Regex` par condition**, conservé dans une table à clés faibles. Les surcharges
-  statiques de `Regex` repassent par un cache global — hachage du motif compris — à chaque
-  appel.
-- **Résolution des règles en O(1).** Le contrôleur indexe les règles par dossier surveillé et
-  les pré-trie au chargement de la configuration. Avant, chaque fichier déclenchait un
-  balayage des dossiers **puis** un `Contains` sur la liste d'identifiants de règles, soit un
-  coût en O(dossiers + règles × identifiants) par événement.
-- **Le moteur ne trie plus par fichier** : il vérifie en O(n) que les règles sont déjà
-  ordonnées et ne trie que si elles ne le sont pas — ce qui n'arrive jamais en production.
+- **`FileContext` splits the path once** at construction and exposes name, base,
+  extension and folder as `ReadOnlySpan<char>`. Exposing them as `string` allocated on
+  *every property read*, i.e. every condition on every file — and `Extension` added a
+  `ToLowerInvariant` on top.
+- **`ValueStringBuilder`** composes names and paths in a 320-character `stackalloc` buffer,
+  falling back to `ArrayPool` on overflow. The common case allocates only the final
+  string. Numbers and dates are written via `TryFormat` straight into the buffer.
+- **Token dispatch by `switch` on span** against literals: the compiler turns it into a
+  jump by length then by character. The chain of case-insensitive comparisons only serves
+  the non-canonical spellings.
+- **One `Regex` per condition**, kept in a weak-key table. The static `Regex` overloads go
+  through a global cache — pattern hashing included — on every call.
+- **O(1) rule resolution.** The controller indexes rules by watched folder and
+  pre-sorts them when the configuration loads. Before, every file triggered a scan of the
+  folders **then** a `Contains` over the list of rule identifiers, i.e. an
+  O(folders + rules × identifiers) cost per event.
+- **The engine no longer sorts per file**: it checks in O(n) that the rules are already
+  ordered and only sorts if they are not — which never happens in production.
 
-Ce qui a été **écarté** après mesure :
+What was **rejected** after measurement:
 
-- **Table de hachage pour la liste d'extensions.** Une règle en compte moins de dix ; le
-  balayage linéaire sur spans gagne (pas de hachage insensible à la casse, pas
-  d'indirection, tout tient en ligne de cache) et n'alloue rien.
-- **Gain en temps sur l'expansion de tokens.** Les allocations chutent d'un facteur neuf,
-  mais le temps mesuré reste à parité — la machine de test est trop bruitée pour affirmer
-  mieux, et ce chemin n'est de toute façon emprunté que par les fichiers qui matchent.
+- **Hash table for the extension list.** A rule has fewer than ten of them; the linear
+  scan over spans wins (no case-insensitive hashing, no indirection, everything fits in
+  cache lines) and allocates nothing.
+- **Time gain on token expansion.** Allocations drop by a factor of nine, but the measured
+  time stays at parity — the test machine is too noisy to claim better, and this path is
+  only taken by matching files anyway.
 
-## Choix d'architecture
+## Architecture choices
 
-**Native AOT dès le premier commit, pas ajouté après coup.** Les analyseurs trimming/AOT sont
-actifs sur toute la solution via `Directory.Build.props`. Conséquences assumées dans le code :
-XAML et bindings compilés, JSON par source generators, P/Invoke par `LibraryImport`,
-convertisseurs XAML exposés en statiques plutôt qu'instanciés par réflexion, regex interprété.
-La solution compile aujourd'hui sans un seul avertissement IL2xxx/IL3xxx.
+**Native AOT from the first commit, not bolted on later.** The trimming/AOT analyzers are
+active on the whole solution via `Directory.Build.props`. Consequences accepted in the
+code: compiled XAML and bindings, source-generated JSON, P/Invoke via `LibraryImport`,
+XAML converters exposed as statics rather than instantiated by reflection, interpreted
+regex. The solution compiles today without a single IL2xxx/IL3xxx warning.
 
-**Polymorphisme JSON par registre, pas par `[JsonDerivedType]`.** Les attributs auraient figé
-la liste des types dérivés dans le coeur métier. `RuleTypeRegistry` associe un discriminant à un
-`JsonTypeInfo` : un module futur (conditions de contenu, OCR, classification IA) enregistre ses
-propres types avec son propre contexte généré, sans recompiler le coeur ni invalider les
-fichiers de règles existants. Un discriminant inconnu lève une erreur explicite plutôt que
-d'être ignoré silencieusement — un fichier écrit par une version ultérieure ne doit jamais être
-chargé amputé.
+**JSON polymorphism by registry, not by `[JsonDerivedType]`.** The attributes would have
+frozen the list of derived types into the business core. `RuleTypeRegistry` maps a
+discriminant to a `JsonTypeInfo`: a future module (content conditions, OCR, AI
+classification) registers its own types with its own generated context, without
+recompiling the core or invalidating existing rule files. An unknown discriminant raises
+an explicit error rather than being silently ignored — a file written by a later version
+must never be loaded truncated.
 
-**L'évaluation des conditions est asynchrone alors que toutes les conditions v1 sont
-synchrones.** C'est délibéré : une condition de contenu (lecture, OCR, appel LLM local)
-s'ajoutera comme un `IConditionEvaluator` de plus, sans changer une signature ni toucher au
-moteur.
+**Condition evaluation is async although all v1 conditions are sync.** This is
+deliberate: a content condition (reading, OCR, local LLM call) will be added as one more
+`IConditionEvaluator`, without changing a signature or touching the engine.
 
-**Surveillance par événements, jamais par polling.** `ReadDirectoryChangesW` en appel bloquant
-sur un thread dédié par dossier, annulation par `CancelIoEx`. Le débordement du buffer noyau
-est détecté et déclenche une réanalyse du dossier, plutôt que de perdre des fichiers en
-silence.
+**Event-driven watching, never polling.** `ReadDirectoryChangesW` as a blocking call on a
+dedicated thread per folder, cancelled via `CancelIoEx`. A kernel buffer overflow is
+detected and triggers a folder rescan, rather than losing files in silence.
 
-**Debounce + stabilisation.** Une copie de fichier produit une rafale d'événements. Le
-`FileStabilizer` coalesce par chemin, attend une période de calme, puis vérifie que le fichier
-est réellement ouvrable et que sa taille a cessé de bouger — sinon on traiterait un
-téléchargement en cours.
+**Debounce + stabilization.** Copying a file produces a burst of events. The
+`FileStabilizer` coalesces by path, waits for a quiet period, then verifies that the file
+is actually openable and that its size has stopped moving — otherwise an in-progress
+download would be processed.
 
-**Traitement sérialisé.** Les fichiers stabilisés passent par un `Channel` à consommateur
-unique : deux règles ne peuvent pas manipuler le même fichier simultanément.
+**Serialized processing.** Stabilized files go through a `Channel` with a single
+consumer: two rules cannot manipulate the same file simultaneously.
 
-## Hors périmètre v1
+## Out of scope for v1
 
-Pas d'OCR ni de lecture de contenu, pas de tags, pas d'intégration cloud, pas de
-multiplateforme. L'architecture est faite pour les accueillir sans réécriture ; elle ne les
-anticipe pas par du code mort.
+No OCR or content reading, no tags, no cloud integration, no cross-platform. The
+architecture is designed to welcome them without a rewrite; it does not anticipate them
+with dead code.
 
-## Limites connues
+## Known limitations
 
-- L'UI n'expose pas l'édition de groupes de conditions imbriqués. Le format les supporte et le
-  moteur les évalue (`ConditionGroup`) ; l'éditeur v1 s'en tient au ET/OU au niveau de la règle.
-- L'association règle → dossier existe dans le modèle (`WatchedFolder.RuleIds`) mais l'éditeur
-  ne la propose pas encore : toutes les règles s'appliquent à tous les dossiers surveillés.
-- L'essai à blanc ne prend qu'un fichier à la fois : pas encore d'aperçu de l'effet d'une
-  règle sur tout un dossier.
+- The UI does not expose editing of nested condition groups. The format supports them and
+  the engine evaluates them (`ConditionGroup`); the v1 editor sticks to AND/OR at the rule
+  level.
+- The rule → folder association exists in the model (`WatchedFolder.RuleIds`) but the
+  editor does not offer it yet: all rules apply to all watched folders.
+- The dry run takes one file at a time: no preview yet of a rule's effect on an entire
+  folder.
 
-## Nom
+## Name
 
-`Banog` est le nom de travail du dossier. Pistes cohérentes avec une identité
-minimaliste/cyberpunk et l'idée d'automatisation silencieuse : **Quiet**, **Undertow**,
-**Nocturne**, **Silt**, **Drift**. À trancher avant la première diffusion — le nom est présent
-dans `AssemblyName`, le chemin `%APPDATA%`, et le manifeste.
+`Banog` is the working name of the project. Candidates consistent with a
+minimalist/cyberpunk identity and the idea of silent automation: **Quiet**, **Undertow**,
+**Nocturne**, **Silt**, **Drift**. To be decided before the first release — the name is
+present in `AssemblyName`, the `%APPDATA%` path, and the manifest.

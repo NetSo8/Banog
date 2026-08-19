@@ -239,7 +239,7 @@
             <TextBlock Classes="empty" IsVisible="{Binding !Flow.HasSelection}"
                        Text="{DynamicResource Flow_Inspector_Empty}" />
 
-            <ScrollViewer IsVisible="{Binding Flow.HasSelection}" Padding="14,14,20,14"
+            <ScrollViewer IsVisible="{Binding Flow.HasSelection}" Padding="14,14,14,14"
                           HorizontalScrollBarVisibility="Disabled"
                           HorizontalContentAlignment="Stretch">
               <StackPanel Spacing="14" HorizontalAlignment="Stretch">
@@ -249,7 +249,8 @@
                     <TextBlock Classes="title" TextWrapping="Wrap"
                                Text="{Binding Flow.SelectedNode.Title}" />
                     <TextBlock Classes="muted" FontSize="11" IsVisible="{Binding Flow.ShowsEditor}"
-                               Text="{Binding Flow.SelectedNode.Subtitle}" TextWrapping="Wrap" />
+                                   Text="{Binding Flow.SelectedNode.Subtitle}" TextWrapping="Wrap"
+                                   TextTrimming="CharacterEllipsis" />
                   </StackPanel>
                   <Button Grid.Column="1" Classes="tiny" Content="✕"
                           ToolTip.Tip="{DynamicResource Types_Close}"
@@ -309,6 +310,7 @@
                     <ComboBox Classes="enum" ItemsSource="{x:Static flow:RuleFlowViewModel.MatchOptions}"
                               SelectedItem="{Binding SelectedRule.Match}" MinWidth="130" />
                     <TextBlock Classes="glue" FontSize="11" TextWrapping="Wrap"
+                               TextTrimming="CharacterEllipsis"
                                Text="{DynamicResource Flow_Gate_Suffix}" />
                   </StackPanel>
                 </StackPanel>
@@ -316,7 +318,8 @@
                 <!-- Condition ou action : l'éditeur existant, tel quel. -->
                 <StackPanel Spacing="12" IsVisible="{Binding Flow.ShowsEditor}">
                   <ContentControl HorizontalContentAlignment="Stretch"
-                                   Content="{Binding Flow.SelectedNode.Editor}" />
+                                  MaxWidth="372"
+                                  Content="{Binding Flow.SelectedNode.Editor}" />
 
                   <CheckBox FontSize="11" IsVisible="{Binding Flow.SelectedCondition,
                                                       Converter={x:Static svc:UiConverters.IsNotNull}}"
