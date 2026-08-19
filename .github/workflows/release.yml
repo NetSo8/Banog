@@ -30,15 +30,17 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      # Tests first: they do not need link.exe, and msvc-dev-cmd would put
+      # Platform=x64 in the environment, which the solution (Any CPU only) rejects.
+      - name: Run tests
+        run: dotnet test -c Release
+
       # Native AOT links with link.exe: the windows runner has the VS C++ tools,
       # this step exposes them (vcvars) before the publish.
       - name: Set up MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
-
-      - name: Run tests
-        run: dotnet test -c Release
 
       - name: Resolve version
         id: version
@@ -52,8 +54,10 @@ jobs:
           "Resolved version: $version"
           "version=$version" >> $env:GITHUB_OUTPUT
 
+      # Platform=AnyCPU overrides the Platform=x64 left in the environment by
+      # msvc-dev-cmd; the runtime identifier (win-x64) comes from the project.
       - name: Publish native executable
-        run: dotnet publish src/Banog.csproj -c Release -o publish/app -p:Version=${{ steps.version.outputs.version }}
+        run: dotnet publish src/Banog.csproj -c Release -p:Platform=AnyCPU -o publish/app -p:Version=${{ steps.version.outputs.version }}
 
       - name: Install Inno Setup
         run: choco install innosetup --yes --no-progress
