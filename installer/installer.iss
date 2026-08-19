@@ -45,5 +45,10 @@ Source: "{#MySourceDir}\*.dll";  DestDir: "{app}"; Flags: ignoreversion
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
 
+[Registry]
+; Startup with Windows: the value is created at install (so uninsdeletevalue can remove
+; it), and the app rewrites it on every launch to keep the path aligned if it is moved.
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Banog"; ValueData: """{app}\{#MyAppExeName}"" --background"; Flags: uninsdeletevalue
+
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
