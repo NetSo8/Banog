@@ -16,8 +16,9 @@ public sealed class StartupRegistration
 
     public void EnsureRegistered()
     {
-        using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
-        if (key is null) return;
+        // CreateSubKey crée la branche Run si elle n'existe pas encore (profil neuf) :
+        // la clé doit être écrite quoi qu'il arrive, pas seulement quand elle préexiste.
+        using var key = Registry.CurrentUser.CreateSubKey(RunKeyPath);
 
         // Le chemin de l'exécutable courant, jamais celui d'une copie déplacée :
         // réappliquer au démarrage réaligne la clé sur l'installation réelle.
