@@ -67,7 +67,7 @@ internal static class Program
         // La langue par défaut est celle de Windows : c'est l'hôte qui sait la demander.
         Banog.UI.Localization.Loc.SystemLanguageProvider = () => SystemLanguageProbe.Current;
         App.InitialLanguage = configuration.Language;
-        App.ViewModelFactory = picker => new MainWindowViewModel(store, _automation, picker, theme);
+        App.ViewModelFactory = picker => new MainWindowViewModel(store, _automation, picker, theme, new UpdateService());
 
         try
         {

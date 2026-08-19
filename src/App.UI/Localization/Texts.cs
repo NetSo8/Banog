@@ -174,6 +174,21 @@ internal static class Texts
             "Vos dossiers, vos règles et vos préférences sont enregistrés dans ce fichier. Copiez-le pour les retrouver sur un autre poste.",
             "Your folders, rules and preferences are saved in this file. Copy it to carry them to another machine."),
 
+        // ---- Mises à jour -------------------------------------------------------------
+        ("Update_Title", "Mise à jour disponible", "Update available"),
+        ("Update_Body", "Une nouvelle version ({0}) est prête à être installée.",
+            "A new version ({0}) is ready to install."),
+        ("Update_View", "Voir", "View"),
+        ("Update_Dismiss", "Plus tard", "Later"),
+        ("Update_UpToDate", "Banog est à jour.", "Banog is up to date."),
+        ("Update_Found", "Nouvelle version {0} disponible.", "New version {0} is available."),
+        ("Set_Updates", "MISES À JOUR", "UPDATES"),
+        ("Set_Version", "Version installée", "Installed version"),
+        ("Set_CheckUpdates", "Vérifier les mises à jour", "Check for updates"),
+        ("Set_Updates_Note",
+            "Banog consulte GitHub de lui-même, une fois par jour, et vous prévient ici sans rien installer. La surveillance en arrière-plan continue de tourner.",
+            "Banog checks GitHub on its own, once a day, and tells you here without installing anything. Background watching keeps running."),
+
         ("Set_Startup", "DÉMARRAGE", "STARTUP"),
         ("Set_BackgroundStartup", "Démarrage en arrière-plan", "Background startup"),
         ("Set_BackgroundStartup_Note",

@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>Banog</RootNamespace>
     <AssemblyName>Banog</AssemblyName>
+    <Version>0.1.1</Version>
     <ApplicationManifest>App.Host\app.manifest</ApplicationManifest>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 

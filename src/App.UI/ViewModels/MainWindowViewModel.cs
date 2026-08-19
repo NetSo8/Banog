@@ -31,6 +31,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly IConfigurationStore _store;
     private readonly IAutomationController _automation;
     private readonly IThemeService _theme;
+    private readonly UpdateService _updates;
 
     /// <summary>
     /// Non figé : un changement de langue reconstruit la fenêtre, et le sélecteur de
@@ -105,6 +106,26 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty] public partial string TestResult { get; set; } = string.Empty;
     [ObservableProperty] public partial bool TestMatched { get; set; }
 
+    // ---- Mise à jour --------------------------------------------------------------
+
+    /// <summary>Vrai quand une version plus récente est publiée sur GitHub.</summary>
+    [ObservableProperty] public partial bool UpdateAvailable { get; set; }
+
+    /// <summary>Numéro de la version proposée (ex. « 0.2.0 »).</summary>
+    [ObservableProperty] public partial string UpdateVersion { get; set; } = string.Empty;
+
+    /// <summary>Adresse de la publication à ouvrir dans le navigateur.</summary>
+    [ObservableProperty] public partial string UpdateUrl { get; set; } = string.Empty;
+
+    /// <summary>Version installée, telle que déclarée au build — affichée dans les paramètres.</summary>
+    public string CurrentVersionText => _updates.CurrentVersion.ToString();
+
+    /// <summary>Résumé de la mise à jour, traduit à la volée (changement de langue compris).</summary>
+    public string UpdateSummary => UpdateAvailable ? Loc.F("Update_Body", UpdateVersion) : string.Empty;
+
+    partial void OnUpdateAvailableChanged(bool value) => OnPropertyChanged(nameof(UpdateSummary));
+    partial void OnUpdateVersionChanged(string value) => OnPropertyChanged(nameof(UpdateSummary));
+
     // ---- Compteurs du mode surveillance ------------------------------------------------
 
     [ObservableProperty] public partial int FilesHandled { get; set; }
@@ -139,12 +160,14 @@ public partial class MainWindowViewModel : ObservableObject
         IConfigurationStore store,
         IAutomationController automation,
         IFolderPicker folderPicker,
-        IThemeService theme)
+        IThemeService theme,
+        UpdateService updates)
     {
         _store = store;
         _automation = automation;
         _folderPicker = folderPicker;
         _theme = theme;
+        _updates = updates;
 
         Flow = new Flow.RuleFlowViewModel(() => ActiveFolderCount);
 
@@ -242,6 +265,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(StatusMessage));
         OnPropertyChanged(nameof(LastEventSummary));
+        OnPropertyChanged(nameof(UpdateSummary));
 
         // Le résultat d'un essai a été écrit dans l'autre langue : on le retire plutôt
         // que de le laisser à moitié traduit.
@@ -322,7 +346,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>Constructeur de conception, utilisé uniquement par l'aperçu XAML.</summary>
     public MainWindowViewModel() : this(
         new JsonConfigurationStore(), new NullAutomationController(), new NullFolderPicker(),
-        new NullThemeService())
+        new NullThemeService(), new UpdateService())
     {
     }
 
@@ -429,6 +453,10 @@ public partial class MainWindowViewModel : ObservableObject
 
         _automation.ApplyConfiguration(BuildConfiguration());
         SetStatus(DescribeState);
+
+        // Vérification discrète et non bloquante : une fois par jour, en arrière-plan de
+        // l'affichage. Un échec ne change rien à l'état affiché.
+        _ = CheckForUpdateAsync(force: false);
     }
 
     private string DescribeState()
@@ -500,6 +528,76 @@ public partial class MainWindowViewModel : ObservableObject
 
     [RelayCommand]
     private Task SaveAsync() => SaveConfigurationAsync(automatic: false);
+
+    /// <summary>Ouvre la publication dans le navigateur par défaut. L'installation reste au choix de l'utilisateur.</summary>
+    [RelayCommand]
+    private void OpenUpdate()
+    {
+        if (!string.IsNullOrEmpty(UpdateUrl)) TryOpenUrl(UpdateUrl);
+    }
+
+    /// <summary>Écarte la version proposée : la bannière ne revient pas tant qu'elle n'est pas dépassée.</summary>
+    [RelayCommand]
+    private void DismissUpdate()
+    {
+        UpdateAvailable = false;
+        _configuration.DismissedUpdateVersion = UpdateVersion;
+        _ = PersistPreferenceAsync(configuration => configuration.DismissedUpdateVersion = UpdateVersion);
+    }
+
+    /// <summary>Vérification manuelle, déclenchée depuis les paramètres.</summary>
+    [RelayCommand]
+    private async Task CheckForUpdatesAsync()
+    {
+        await CheckForUpdateAsync(force: true).ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Interroge GitHub. En automatique, une fois par jour ; à la demande, toujours. Tout
+    /// échec ou version identique est silencieux ; seule une version plus récente déclenche
+    /// la bannière. La date de la dernière vérification est mémorisée, sans toucher aux règles.
+    /// </summary>
+    private async Task CheckForUpdateAsync(bool force)
+    {
+        if (!force && _configuration.LastUpdateCheckUtc is { } last
+            && DateTimeOffset.UtcNow - last < TimeSpan.FromHours(24)) return;
+
+        var info = await _updates.CheckAsync().ConfigureAwait(true);
+
+        _configuration.LastUpdateCheckUtc = DateTimeOffset.UtcNow;
+        _ = PersistPreferenceAsync(configuration => configuration.LastUpdateCheckUtc = _configuration.LastUpdateCheckUtc);
+
+        if (info is null)
+        {
+            if (force) SetStatus(() => Loc.T("Update_UpToDate"));
+            return;
+        }
+
+        // Version déjà écartée par l'utilisateur : on ne la repropose pas.
+        if (_configuration.DismissedUpdateVersion == info.Version)
+        {
+            UpdateAvailable = false;
+            return;
+        }
+
+        UpdateVersion = info.Version;
+        UpdateUrl = info.HtmlUrl;
+        UpdateAvailable = true;
+
+        if (force) SetStatus(() => Loc.F("Update_Found", info.Version));
+    }
+
+    private static void TryOpenUrl(string url)
+    {
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch
+        {
+            // Pas de navigateur ou d'accès : rien d'intrusif à signaler.
+        }
+    }
 
     [RelayCommand]
     private async Task AddFolderAsync()

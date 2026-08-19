@@ -73,4 +73,16 @@ public sealed class AppConfiguration
     /// </summary>
     public LanguagePreference Language { get; set; } = LanguagePreference.System;
 
+    /// <summary>
+    /// Dernière interrogation de l'API GitHub (heure UTC). Sert à ne pas vérifier les
+    /// mises à jour à chaque démarrage : une fois par jour suffit.
+    /// </summary>
+    public DateTimeOffset? LastUpdateCheckUtc { get; set; }
+
+    /// <summary>
+    /// Version de mise à jour que l'utilisateur a écartée. Tant qu'elle n'est pas dépassée,
+    /// la bannière ne revient pas — l'utilisateur garde la main.
+    /// </summary>
+    public string? DismissedUpdateVersion { get; set; }
+
 }

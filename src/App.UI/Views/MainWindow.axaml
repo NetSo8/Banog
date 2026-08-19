@@ -26,6 +26,26 @@
          <!-- Bas de la barre : ce que fait l'application, et l'état de la sauvegarde. -->
         <StackPanel DockPanel.Dock="Bottom" Spacing="10">
 
+          <!-- Bannière de mise à jour : discrète, en bas de la barre, et muette tant
+               qu'aucune version plus récente n'est publiée. L'utilisateur fait comme il veut. -->
+          <Border Classes="panel" Padding="12" IsVisible="{Binding UpdateAvailable}">
+            <StackPanel Spacing="8">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="↑" FontSize="13" VerticalAlignment="Center"
+                           Foreground="{DynamicResource Accent}" />
+                <TextBlock FontSize="12" FontWeight="SemiBold" Text="{DynamicResource Update_Title}" />
+              </StackPanel>
+              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                         Text="{Binding UpdateSummary}" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Classes="accent" Command="{Binding OpenUpdateCommand}"
+                        Content="{DynamicResource Update_View}" />
+                <Button Classes="ghost" Command="{Binding DismissUpdateCommand}"
+                        Content="{DynamicResource Update_Dismiss}" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
           <Border Classes="panel" Padding="12">
             <StackPanel Spacing="10">
 
@@ -332,6 +352,24 @@
                 <TextBlock Classes="mono" TextWrapping="Wrap" Text="{Binding ConfigurationPath}" />
                 <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
                            Text="{DynamicResource Set_ConfigFile_Note}" />
+              </StackPanel>
+            </Border>
+
+            <!-- La mise à jour est proposée, jamais imposée : ici on la demande à la main
+                 et on voit la version installée. La vérification automatique, une fois par
+                 jour, n'a rien à faire dans les règles ni dans la sauvegarde. -->
+            <Border Classes="panel" Padding="16">
+              <StackPanel Spacing="10">
+                <TextBlock Classes="section" Text="{DynamicResource Set_Updates}" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Classes="glue" Text="{DynamicResource Set_Version}" />
+                  <TextBlock Classes="mono" Text="{Binding CurrentVersionText}" />
+                </StackPanel>
+                <Button Classes="accent" HorizontalAlignment="Left"
+                        Command="{Binding CheckForUpdatesCommand}"
+                        Content="{DynamicResource Set_CheckUpdates}" />
+                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                           Text="{DynamicResource Set_Updates_Note}" />
               </StackPanel>
             </Border>
 
