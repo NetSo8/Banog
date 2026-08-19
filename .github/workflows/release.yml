@@ -124,3 +124,61 @@ jobs:
             artifacts/Banog-*-portable.zip
             artifacts/SHA256SUMS.txt
           generate_release_notes: true
+
+  # Installs the freshly built installer on a second clean runner, starts the app,
+  # checks the startup registration, then uninstalls. A disposable Windows machine
+  # every run: no local VM needed to verify the install path end to end.
+  smoke-test:
+    needs: release
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: banog-release-files
+          path: artifacts
+
+      - name: Install silently
+        shell: pwsh
+        run: |
+          $installer = (Get-ChildItem artifacts\Banog-setup-*.exe | Select-Object -First 1).FullName
+          if (-not $installer) { throw "Installer not found" }
+          $p = Start-Process -FilePath $installer -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/LOG=setup.log' -PassThru -Wait
+          if ($p.ExitCode -notin @(0, 1)) { throw "Installer failed (exit $($p.ExitCode))" }
+          if (Select-String -Path setup.log -Pattern 'Exception' -Quiet) { throw "Installer logged an exception" }
+
+      - name: Verify installation
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:LOCALAPPDATA 'Banog'
+          foreach ($file in 'Banog.exe','libSkiaSharp.dll','libHarfBuzzSharp.dll','av_libglesv2.dll','unins000.exe') {
+            if (-not (Test-Path (Join-Path $dir $file))) { throw "Missing $file" }
+          }
+          $shortcut = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Banog.lnk'
+          if (-not (Test-Path $shortcut)) { throw 'Start menu shortcut missing' }
+
+      - name: Smoke-run the app
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:LOCALAPPDATA 'Banog\Banog.exe'
+          $first = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 15
+          if ($first.HasExited) { throw "Banog exited early (code $($first.ExitCode))" }
+          $second = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 5
+          if (-not $second.HasExited) { throw 'Second instance did not exit (single-instance broken)' }
+          $key = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name Banog
+          if ($key.Banog -notmatch '--background') { throw 'Startup Run key not registered' }
+          Stop-Process -Name Banog -Force -ErrorAction SilentlyContinue
+
+      - name: Uninstall
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:LOCALAPPDATA 'Banog'
+          $u = Start-Process -FilePath (Join-Path $dir 'unins000.exe') -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -PassThru -Wait
+          if ($u.ExitCode -ne 0) { throw "Uninstaller exit code $($u.ExitCode)" }
+          Start-Sleep -Seconds 3
+          if (Test-Path $dir) { throw 'Install directory still present after uninstall' }
+          $runKey = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name Banog -ErrorAction SilentlyContinue
+          if ($runKey) { throw 'Run key not removed by uninstall' }
